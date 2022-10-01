@@ -84,7 +84,7 @@ def create_table():
 create_table()
 
 def add_portfolio_usertable():
-    c.execute('INSERT INTO portfolio_usertable((user_id,portfolio_id,ticker,shares,type,date,price,cost) VALUES(?,?,?,?,?,?,?,?);')
+    c.execute('INSERT INTO portfolio_usertable((user_id,portfolio_id,shares,type,date,price,cost) VALUES(?,?,?,?,?,?,?,?);')
     conn.commit()
 def delete_portfolio_usertable(ticker):
     c.execute('DELETE FROM portfolio_usertable WHERE ticker="{}"'.format(ticker))
@@ -102,8 +102,8 @@ def view_all_portfolio_usertable():
 # print(view_all_portfolio_usertable())
 
 
-def add_data(ticker,shares,type,date,price,cost):
-    c.execute('INSERT INTO portfoliotable(ticker,shares,type,date,price,cost) VALUES(?,?,?,?,?,?);',(ticker,shares,type,date,price,cost))
+def add_data(ticker,type,price,cost):
+    c.execute('INSERT INTO portfoliotable(ticker,type,price,cost) VALUES(?,?,?,?);',(ticker,type,price,cost))
     conn.commit()
 def delete_data(ticker):
     c.execute('DELETE FROM portfoliotable WHERE ticker="{}"'.format(ticker))
@@ -121,8 +121,8 @@ def get_ticker(ticker):
     data = c.fetchall()
     return data
 
-def edit_ticker_data(new_ticker,new_shares,new_type,new_date,new_price,new_cost,ticker,shares,type,date,price,cost):
-    c.execute("UPDATE portfoliotable SET ticker =?,shares=?,type=?,date=? ,price=? ,cost=?  WHERE ticker =? and shares=? and type=? and date=?  and price=? and cost=? ",(new_ticker,new_shares,new_type,new_date,new_price,new_cost,ticker,shares,type,date,price,cost))
+def edit_ticker_data(new_ticker,new_type,new_price,new_cost,ticker,type,price,cost):
+    c.execute("UPDATE portfoliotable SET ticker =?,type=?,price=? ,cost=?  WHERE ticker =? and type=? and price=? and cost=? ",(new_ticker,new_type,new_price,new_cost,ticker,type,price,cost))
     conn.commit()
     data = c.fetchall()
     return data
@@ -453,25 +453,25 @@ elif choice == "Login":
             """,
             height=700,
             )
-        if selected=="Bot":
+        # if selected=="Bot":
         
-            import torch
-            import transformers
-            from transformers import *
-            from transformers import BertTokenizer, BertForSequenceClassification
-            from transformers import pipeline
+            # import torch
+            # import transformers
+            # from transformers import *
+            # from transformers import BertTokenizer, BertForSequenceClassification
+            # from transformers import pipeline
 
-            finbert = BertForSequenceClassification.from_pretrained('yiyanghkust/finbert-tone',num_labels=3)
-            tokenizer = BertTokenizer.from_pretrained('yiyanghkust/finbert-tone')
+            # finbert = BertForSequenceClassification.from_pretrained('yiyanghkust/finbert-tone',num_labels=3)
+            # tokenizer = BertTokenizer.from_pretrained('yiyanghkust/finbert-tone')
 
-            nlp = pipeline("sentiment-analysis", model=finbert, tokenizer=tokenizer)
+            # nlp = pipeline("sentiment-analysis", model=finbert, tokenizer=tokenizer)
 
-            sentences = ["there is a shortage of capital, and we need extra financing",  
-                        "growth is strong and we have plenty of liquidity", 
-                        "there are doubts about our finances", 
-                        "profits are flat"]
-            results = nlp(sentences)
-            print(results) 
+            # sentences = ["there is a shortage of capital, and we need extra financing",  
+            #             "growth is strong and we have plenty of liquidity", 
+            #             "there are doubts about our finances", 
+            #             "profits are flat"]
+            # results = nlp(sentences)
+            # print(results) 
         #     @st.cache(hash_funcs={transformers.models.gpt2.tokenization_gpt2_fast.GPT2TokenizerFast: hash}, suppress_st_warning=True)
         #     def load_data():    
         #         from transformers import pipeline
@@ -1278,7 +1278,7 @@ elif choice == "Login":
             
 
           
-            st.markdown("<h1 style='text-align: center; color: White;'>My Portfolio</h1>", unsafe_allow_html=True)
+            # st.markdown("<h1 style='text-align: center; color: White;'>My Portfolio</h1>", unsafe_allow_html=True)
             menu=["Create","Read","Update","Delete","About"]
             choice=st.selectbox("Menu",menu)
             st.expander("View All")
@@ -1290,7 +1290,7 @@ elif choice == "Login":
             
             # st.write(result)
             
-            df = pd.DataFrame(result,columns=['Ticker','Shares','Type','Date','Price','Cost'])
+            df = pd.DataFrame(result,columns=['Id','Ticker','Type','Price','Cost'])
             st.dataframe(df)
             ticker_df = df['Ticker'].value_counts().to_frame()
             # st.dataframe(ticker_df)
@@ -1309,22 +1309,20 @@ elif choice == "Login":
                 col1,col2,col3= st.columns(3)
                 with col1:
                     ticker=st.text_input("Ticker Symbol")
-                    shares=st.number_input("shares")
                 with col2:
                     type=st.text_input("Type")
-                    date=st.date_input("Date")
                 with col3:
                     price=st.number_input("Price")
                     cost=st.number_input("Cost")
                 complete=st.button("Add To Portfolio")    
                 if complete:
-                    add_data(ticker,shares,type,date,price,cost)
+                    add_data(ticker,type,price,cost)
                     st.success("Successfully Added Data:")
                     
             elif choice=="Update":
                 result = view_all_data()
                 # st.write(result)
-                df = pd.DataFrame(result,columns=['Ticker','Shares','Type','Date','Price','Cost'])
+                df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
                 df['Shares'] = pd.to_numeric(df['Shares'])
                 print(df)
                 print(df.dtypes)
@@ -1337,11 +1335,10 @@ elif choice == "Login":
                 st.write(selected_result)
                 if selected_result:
                     ticker= selected_result[0][0]
-                    shares = selected_result[0][1]
-                    type = selected_result[0][2]
-                    date = selected_result[0][3]
-                    price = selected_result[0][4]
-                    cost = selected_result[0][5]
+                    type = selected_result[0][1]
+                    price = selected_result[0][2]
+                    cost = selected_result[0][3]
+                    
                     col1,col2,col3= st.columns(3)
                     with col1:
                         new_ticker = st.text_input(label='ticker')
@@ -1360,7 +1357,7 @@ elif choice == "Login":
                     with st.expander("View Updated Data"):
                         result = view_all_data()
                         # st.write(result)
-                        clean_df = pd.DataFrame(result,columns=['Ticker','Shares','Type','Date','Price','Cost'])
+                        clean_df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
                         st.dataframe(clean_df)
 
             elif choice == "Delete":
@@ -1368,7 +1365,7 @@ elif choice == "Login":
                 with st.expander("View Data"):
                     result = view_all_data()
                     # st.write(result)
-                    df = pd.DataFrame(result,columns=['Ticker','Shares','Type','Date','Price','Cost'])
+                    df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
                     df["Shares"] = pd.to_numeric(df["Shares"])
                     st.dataframe(df)
 
@@ -1381,7 +1378,7 @@ elif choice == "Login":
                 with st.expander("Updated Data"):
                     result = view_all_data()
                     # st.write(result)
-                    clean_df = pd.DataFrame(result,columns=['Ticker','Shares','Type','Date','Price','Cost'])
+                    clean_df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
                     st.dataframe(clean_df)
             else :
                 st.error("Incorrect Password/Username")
