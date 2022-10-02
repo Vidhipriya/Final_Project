@@ -131,8 +131,11 @@ def edit_ticker_data(new_ticker,new_type,new_price,new_cost,ticker,type,price,co
 #     c.execute('DROP TABLE IF EXISTS portfoliotable;')
 #     conn.commit()
 # delete_table()
-menu=["Login","Register"]
-choice=st.selectbox("Choose One",menu)
+text4=st.empty()
+text2=st.empty()
+with text2.container():
+    menu=["Login","Register"]
+    choice=st.selectbox("Choose One",menu)
 
 # def delete_usertable():
 #                 c.execute('DROP TABLE IF EXISTS usertable;')
@@ -150,15 +153,18 @@ if choice == "Register":
         st.info("Go to login Menu to login")
    
 elif choice == "Login":
-    st.title="Login"
-    username= st.text_input("Username")
-    password= st.text_input("password",type='password')
-    logged=st.button("Login")
+    with text4.container():
 
-    result = login_user(username,password)
+        username= st.text_input("Username")
+        password= st.text_input("password",type='password')
+        submit = st.button('Submit')
+
+        result = login_user(username,password)
     if result:
         pass
-        st.success("Welcome Back {}".format(username))
+        text4.empty()
+        text2.empty()
+        st.sidebar.write(f'{username}')
         def get_data(selected_stocks):
             return [
                 ['2015-12-25', 512.53, 514.88, 505.69, 507.34],
@@ -229,230 +235,230 @@ elif choice == "Login":
 
             # st.title(f"{selected}")
             #st.title("Stock prediction app")
-        stocks=["AAPL","GOOG","MSFT","COST","AMD","FDX","SAVA","CANO"]
-        selected_stocks=st.selectbox("Select A Ticker",stocks)
-        period=n_years=365
+            stocks=["AAPL","GOOG","MSFT","COST","AMD","FDX","SAVA","CANO"]
+            selected_stocks=st.selectbox("Select A Ticker",stocks)
+            period=n_years=365
 
-        @st.cache
-        def load_data(ticker):
-            data=yf.download(ticker)
-            data.reset_index(inplace =True)
-            data['Date'] = data['Date'].apply(lambda x: str(x.date()))
-            data=data[['Date','Open','High','Low','Close']].to_numpy()
-            data = json.dumps(data,cls=NumpyArrayEncoder)
-            return data 
-            
-            #data=load_data(selected_stocks)
-            #print(data)
-            # print(selected_stocks)
-            # print(load_data(selected_stocks))
-        components.html(
-        """<html>
-            <head>
-            <script src="https://cdn.anychart.com/themes/2.0.0/dark_provence.min.js"></script>
-            <script src="https://cdn.anychart.com/themes/2.0.0/dark_glamour.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-stock.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
-            <link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
-            <link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
-            <style type="text/css">
-                html,
-                body,
-                #container {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                color:white;
-                }
-
-            </style>
-            </head>
-            
-            
-            <script>
-            var table, mapping, chart;
-            anychart.onDocumentReady(function () {
-
-            table = anychart.data.table();
-            table.addData(""" + load_data(selected_stocks) +  """);
-        
-                // mapping the data
-                mapping = table.mapAs();
-                mapping.addField('open', 1, 'first');
-                mapping.addField('high', 2, 'max');
-                mapping.addField('low', 3, 'min');
-                mapping.addField('close', 4, 'last');
-                mapping.addField('value', 4, 'last');
-
-                // defining the chart type
-                chart = anychart.stock();
+            @st.cache
+            def load_data(ticker):
+                data=yf.download(ticker)
+                data.reset_index(inplace =True)
+                data['Date'] = data['Date'].apply(lambda x: str(x.date()))
+                data=data[['Date','Open','High','Low','Close']].to_numpy()
+                data = json.dumps(data,cls=NumpyArrayEncoder)
+                return data 
                 
-                // set the series type
-                chart.plot(0).ohlc(mapping).name('"""+ selected_stocks +"""');
-                
-                // setting the chart title
-                chart.title('AnyStock Demo');
-
-                // display the chart	  
-                chart.container('container');
-                chart.draw();
-                });
-                </script>
-                </head>
-                <body>
-                    <div id="container" style="width: 100%; height: 100%"></div>
-                    """+selected_stocks+"""
-                </body>
-            </html>
-        
-        """,
-            height=600,
-        )
-        components.html(
-        """<html>
-            <head>
-            <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-annotations.min.js"></script>
-            <script src="https://cdn.anychart.com/themes/2.0.0/dark_provence.min.js"></script>
-            <script src="https://cdn.anychart.com/themes/2.0.0/dark_glamour.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-stock.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
-            <link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
-            <link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
-            <style type="text/css">
-                html, body {
+                #data=load_data(selected_stocks)
+                #print(data)
+                # print(selected_stocks)
+                # print(load_data(selected_stocks))
+            components.html(
+            """<html>
+                <head>
+                <script src="https://cdn.anychart.com/themes/2.0.0/dark_provence.min.js"></script>
+                <script src="https://cdn.anychart.com/themes/2.0.0/dark_glamour.min.js"></script>
+                <script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
+                <script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
+                <script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
+                <script src="https://cdn.anychart.com/releases/v8/js/anychart-stock.min.js"></script>
+                <script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
+                <link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
+                <link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
+                <style type="text/css">
+                    html,
+                    body,
+                    #container {
                     width: 100%;
                     height: 100%;
                     margin: 0;
                     padding: 0;
-                }
-                select {
-                    margin: 10px 0 0 10px;
-                }
-                button {
-                    margin: 10px 0 0 5px;
-                }
-                #container {
-                    position: absolute;
-                    width: 100%;
-                    top: 35px;
-                    bottom: 0;
-                }
+                    color:white;
+                    }
 
-            </style>
-            </head>
-            
-            
-            <script>
-                anychart.onDocumentReady(function() {
-            // The data used in this sample can be obtained from the CDN
-            // https://cdn.anychart.com/csv-data/csco-daily.js
-
-            // create data table on loaded data
-            var dataTable = anychart.data.table();
-            dataTable.addData(""" + load_data(selected_stocks) +  """);
-
-            // map data for the ohlc series
-            var ohlcMapping = dataTable.mapAs({'open': 1, 'high': 2, 'low': 3, 'close': 4});
-
-            // map data for scroller and volume series
-            var valueMapping = dataTable.mapAs({'value': 5});
-
-            // create stock chart
-            var chart = anychart.stock();
-
-            // create and setup ohlc series on the first plot
-            var ohlcSeries = chart.plot(0).ohlc(ohlcMapping);
-            ohlcSeries.name('"""+ selected_stocks +"""');
-            ohlcSeries.legendItem().iconType('risingfalling');
-
-            // create and setup volume plot
-            var volumePlot = chart.plot(1);
-            volumePlot.height('30%');
-            volumePlot.yAxis().labels().format('${%Value}{scale:(1000000)(1000)|(kk)(k)}');
-
-            // create and setup ohlc series on the first plot
-            var volumeSeries = volumePlot.column(valueMapping);
-            volumeSeries.name('Volume');
-
-            // create scroller series
-            chart.scroller().area(valueMapping);
-
-            // set container id for the chart
-            chart.container('container');
-
-            // initiate chart drawing
-            chart.draw();
-
-            // create range picker
-            var rangePicker = anychart.ui.rangePicker();
-            // init range picker
-            rangePicker.render(chart);
-
-            // create range selector
-            var rangeSelector = anychart.ui.rangeSelector();
-            // init range selector
-            rangeSelector.render(chart);
-            });
-            
-            // allow drawing on the first plot
-            chart.plot(0).annotations().enabled(true);
-            chart.plot(1).annotations().enabled(true);
-
-            
-
-            // reset the select list to the first option
-            chart.listen("annotationDrawingFinish", function(){
-                document.getElementById("typeSelect").value = "default";
-            });
-            
-        
-            // create annotations
-            function create() {
-                var select = document.getElementById("typeSelect");
-                chart.annotations().startDrawing(select.value);   
-            }
-
-            // remove all annotations
-            function removeAll() {
-                chart.annotations().removeAllAnnotations();
-            }
-                </script>
+                </style>
                 </head>
-                <body>
-                <select id="typeSelect" onclick="create()">
-                    <option value="default" selected disabled>Annotation Type</option>
-                    <option value="andrews-pitchfork">Andrews' Pitchfork</option>
-                    <option value="ellipse">Ellipse</option>
-                    <option value="fibonacci-arc">Fibonacci Arc</option>
-                    <option value="fibonacci-fan">Fibonacci Fan</option>
-                    <option value="fibonacci-retracement">Fibonacci Retracement</option>
-                    <option value="fibonacci-timezones">Fibonacci Time Zones</option>  
-                    <option value="horizontal-line">Horizontal Line</option> 
-                    <option value="infinite-line">Infinite Line</option>
-                    <option value="line">Line Segment</option>
-                    <option value="marker">Marker</option>   
-                    <option value="ray">Ray</option>
-                    <option value="rectangle">Rectangle</option>
-                    <option value="trend-channel">Trend Channel</option>
-                    <option value="triangle">Triangle</option>
-                    <option value="vertical-line">Vertical Line</option>
-                </select>
-                <button onclick="removeAll()">Remove All</button>
-                    <div id="container" style="width: 100%; height: 100%"></div>
-                    """+selected_stocks+"""
-                </body>
-            </html>
-        
+                
+                
+                <script>
+                var table, mapping, chart;
+                anychart.onDocumentReady(function () {
+
+                table = anychart.data.table();
+                table.addData(""" + load_data(selected_stocks) +  """);
+            
+                    // mapping the data
+                    mapping = table.mapAs();
+                    mapping.addField('open', 1, 'first');
+                    mapping.addField('high', 2, 'max');
+                    mapping.addField('low', 3, 'min');
+                    mapping.addField('close', 4, 'last');
+                    mapping.addField('value', 4, 'last');
+
+                    // defining the chart type
+                    chart = anychart.stock();
+                    
+                    // set the series type
+                    chart.plot(0).ohlc(mapping).name('"""+ selected_stocks +"""');
+                    
+                    // setting the chart title
+                    chart.title('AnyStock Demo');
+
+                    // display the chart	  
+                    chart.container('container');
+                    chart.draw();
+                    });
+                    </script>
+                    </head>
+                    <body>
+                        <div id="container" style="width: 100%; height: 100%"></div>
+                        """+selected_stocks+"""
+                    </body>
+                </html>
+            
             """,
-            height=700,
+                height=600,
             )
+            components.html(
+            """<html>
+                <head>
+                <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-annotations.min.js"></script>
+                <script src="https://cdn.anychart.com/themes/2.0.0/dark_provence.min.js"></script>
+                <script src="https://cdn.anychart.com/themes/2.0.0/dark_glamour.min.js"></script>
+                <script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
+                <script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
+                <script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
+                <script src="https://cdn.anychart.com/releases/v8/js/anychart-stock.min.js"></script>
+                <script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
+                <link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
+                <link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
+                <style type="text/css">
+                    html, body {
+                        width: 100%;
+                        height: 100%;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    select {
+                        margin: 10px 0 0 10px;
+                    }
+                    button {
+                        margin: 10px 0 0 5px;
+                    }
+                    #container {
+                        position: absolute;
+                        width: 100%;
+                        top: 35px;
+                        bottom: 0;
+                    }
+
+                </style>
+                </head>
+                
+                
+                <script>
+                    anychart.onDocumentReady(function() {
+                // The data used in this sample can be obtained from the CDN
+                // https://cdn.anychart.com/csv-data/csco-daily.js
+
+                // create data table on loaded data
+                var dataTable = anychart.data.table();
+                dataTable.addData(""" + load_data(selected_stocks) +  """);
+
+                // map data for the ohlc series
+                var ohlcMapping = dataTable.mapAs({'open': 1, 'high': 2, 'low': 3, 'close': 4});
+
+                // map data for scroller and volume series
+                var valueMapping = dataTable.mapAs({'value': 5});
+
+                // create stock chart
+                var chart = anychart.stock();
+
+                // create and setup ohlc series on the first plot
+                var ohlcSeries = chart.plot(0).ohlc(ohlcMapping);
+                ohlcSeries.name('"""+ selected_stocks +"""');
+                ohlcSeries.legendItem().iconType('risingfalling');
+
+                // create and setup volume plot
+                var volumePlot = chart.plot(1);
+                volumePlot.height('30%');
+                volumePlot.yAxis().labels().format('${%Value}{scale:(1000000)(1000)|(kk)(k)}');
+
+                // create and setup ohlc series on the first plot
+                var volumeSeries = volumePlot.column(valueMapping);
+                volumeSeries.name('Volume');
+
+                // create scroller series
+                chart.scroller().area(valueMapping);
+
+                // set container id for the chart
+                chart.container('container');
+
+                // initiate chart drawing
+                chart.draw();
+
+                // create range picker
+                var rangePicker = anychart.ui.rangePicker();
+                // init range picker
+                rangePicker.render(chart);
+
+                // create range selector
+                var rangeSelector = anychart.ui.rangeSelector();
+                // init range selector
+                rangeSelector.render(chart);
+                });
+                
+                // allow drawing on the first plot
+                chart.plot(0).annotations().enabled(true);
+                chart.plot(1).annotations().enabled(true);
+
+                
+
+                // reset the select list to the first option
+                chart.listen("annotationDrawingFinish", function(){
+                    document.getElementById("typeSelect").value = "default";
+                });
+                
+            
+                // create annotations
+                function create() {
+                    var select = document.getElementById("typeSelect");
+                    chart.annotations().startDrawing(select.value);   
+                }
+
+                // remove all annotations
+                function removeAll() {
+                    chart.annotations().removeAllAnnotations();
+                }
+                    </script>
+                    </head>
+                    <body>
+                    <select id="typeSelect" onclick="create()">
+                        <option value="default" selected disabled>Annotation Type</option>
+                        <option value="andrews-pitchfork">Andrews' Pitchfork</option>
+                        <option value="ellipse">Ellipse</option>
+                        <option value="fibonacci-arc">Fibonacci Arc</option>
+                        <option value="fibonacci-fan">Fibonacci Fan</option>
+                        <option value="fibonacci-retracement">Fibonacci Retracement</option>
+                        <option value="fibonacci-timezones">Fibonacci Time Zones</option>  
+                        <option value="horizontal-line">Horizontal Line</option> 
+                        <option value="infinite-line">Infinite Line</option>
+                        <option value="line">Line Segment</option>
+                        <option value="marker">Marker</option>   
+                        <option value="ray">Ray</option>
+                        <option value="rectangle">Rectangle</option>
+                        <option value="trend-channel">Trend Channel</option>
+                        <option value="triangle">Triangle</option>
+                        <option value="vertical-line">Vertical Line</option>
+                    </select>
+                    <button onclick="removeAll()">Remove All</button>
+                        <div id="container" style="width: 100%; height: 100%"></div>
+                        """+selected_stocks+"""
+                    </body>
+                </html>
+            
+                """,
+                height=700,
+                )
         # if selected=="Bot":
         
             # import torch
