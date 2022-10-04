@@ -4,6 +4,7 @@ from datetime import date
 import json
 import csv
 from json import JSONEncoder
+import numpy as np
 import numpy
 import yfinance as yf
 # from fbprophet import Prophet
@@ -15,11 +16,11 @@ from pathlib import Path
 from streamlit_chat import *
 import requests
 from streamlit_chat import *
-from transformers import BlenderbotTokenizer
-from transformers import BlenderbotForConditionalGeneration
+# from transformers import BlenderbotTokenizer
+# from transformers import BlenderbotForConditionalGeneration
 
 
-
+user_id = 0
 
 import datetime
 import streamlit as st
@@ -50,15 +51,24 @@ from st_on_hover_tabs import on_hover_tabs
 from yaml import SafeLoader
 import yaml
 # Main App
-st.set_page_config(page_title="Fintero", page_icon=":stock_chart:", layout="wide" ,initial_sidebar_state='collapsed',) 
-# Login Page
+st.set_page_config(page_title="Fintero", page_icon=":stock_chart:", layout="wide" ,initial_sidebar_state='collapsed',)
+st.write('<style>div.block-container{padding-top:2rem;}</style>', unsafe_allow_html=True) 
+#  Login Page
 import sqlite3
+conn=sqlite3.connect('data.db')
 conn=sqlite3.connect('data.db')
 c=conn.cursor()
 
 def create_usertable():
     c.execute('CREATE TABLE IF NOT EXISTS usertable(user_id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT, password TEXT);')
 create_usertable()
+def create_stocks_usertable():
+    c.execute('CREATE TABLE IF NOT EXISTS stocks_usertable(user_id INTEGER, stock_id INTEGER, shares INTEGER, date DATE ,PRIMARY KEY (user_id, stock_id,date,shares),FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,FOREIGN KEY (stock_id) REFERENCES stock(stock_id) ON DELETE CASCADE) ;')
+create_stocks_usertable()
+
+def create_table():
+    c.execute('CREATE TABLE IF NOT EXISTS stocktable(stock_id INTEGER PRIMARY KEY AUTOINCREMENT,ticker TEXT, type TEXT, price INTEGER, cost INTEGER);')
+create_table()
 
 def add_userdata(username,password):
     c.execute('INSERT INTO usertable(username, password) VALUES(?,?);',(username,password))
@@ -67,75 +77,84 @@ def delete_userdata():
     c.execute('DELETE FROM usertable WHERE username="{}"'.format(username))
     conn.commit()
 def login_user(username,password):
+    global user_id
     c.execute('SELECT * FROM  usertable WHERE username=? AND password=?;',(username,password))
     data = c.fetchall()
+    if(len(data) > 0):
+        user_id = data[0][0]
     return data
-def view_all_users():
-    c.execute('SELECT * FROM  usertable ')
+def view_all_stocks_user():
+    c.execute('SELECT * FROM  stocks_usertable WHERE user_id='+ str(user_id) +';')
     data = c.fetchall()
     return data
 
-def create_portfolio_usertable():
-    c.execute('CREATE TABLE IF NOT EXISTS portfolio_usertable(user_id INTEGER, portfolio_id INTEGER,shares INTEGER,date DATETIME ,PRIMARY KEY (user_id, portfolio_id,date),FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,FOREIGN KEY (portfolio_id) REFERENCES portfolio(portfolio_id) ON DELETE CASCADE) ;')
-create_portfolio_usertable()
 
-def create_table():
-    c.execute('CREATE TABLE IF NOT EXISTS portfoliotable(portfolio_id INTEGER PRIMARY KEY AUTOINCREMENT,ticker TEXT, type TEXT, price INTEGER, cost INTEGER);')
-create_table()
 
-def add_portfolio_usertable():
-    c.execute('INSERT INTO portfolio_usertable((user_id,portfolio_id,shares,type,date,price,cost) VALUES(?,?,?,?,?,?,?,?);')
+def add_stocks_usertable(user_id,stock_id,shares,date):
+    c.execute('INSERT INTO stocks_usertable(user_id,stock_id,shares,date) VALUES(?,?,?,?);',(user_id,stock_id,shares,date))
     conn.commit()
-def delete_portfolio_usertable(ticker):
-    c.execute('DELETE FROM portfolio_usertable WHERE ticker="{}"'.format(ticker))
+def delete_stocks_usertable(ticker):
+    c.execute('DELETE FROM stocks_usertable WHERE ticker="{}"'.format(ticker))
     conn.commit()
-def view_all_portfolio_usertable():
-    c.execute('SELECT * FROM  portfolio_usertable JOIN portfoliotable ON portfolio_usertable.portfolio_id = portfoliotable.portfolio_id JOIN usertable ON portfolio_usertable.user_id=usertable.user_id WHERE portfolio_usertable.user_id=1 ;')
+# def view_all_stocks_usertable():
+#     c.execute('SELECT * FROM  stocks_usertable JOIN stocktable ON stocks_usertable.stock_id = stocktable.stock_id JOIN usertable ON stocks_usertable.user_id=usertable.user_id WHERE stocks_usertable.user_id=usertable.user_id  ;')
+#     data = c.fetchall()
+#     return data
+def seen_by_person():
+    sql='SELECT * FROM stocks_usertable JOIN stocktable ON stocks_usertable.stock_id = stocktable.stock_id JOIN usertable ON stocks_usertable.user_id=usertable.user_id WHERE  stocks_usertable.user_id=' + str(user_id) +';'
+    print(sql)
+    print(sql)
+    print(sql)
+    print(sql)
+    print(sql)
+    c.execute(sql)
     data = c.fetchall()
     return data
-# print(view_all_portfolio_usertable())
-# print(view_all_portfolio_usertable())
-# print(view_all_portfolio_usertable())
-# print(view_all_portfolio_usertable())
-# print(view_all_portfolio_usertable())
-# print(view_all_portfolio_usertable())
-# print(view_all_portfolio_usertable())
+# print(view_all_stocks_usertable())
+# print(view_all_stocks_usertable())
+# print(view_all_stocks_usertable())
+# print(view_all_stocks_usertable())
+# print(view_all_stocks_usertable())
+# print(view_all_stocks_usertable())
+# print(view_all_stocks_usertable())
 
 
 def add_data(ticker,type,price,cost):
-    c.execute('INSERT INTO portfoliotable(ticker,type,price,cost) VALUES(?,?,?,?);',(ticker,type,price,cost))
+    c.execute('INSERT INTO stocktable(ticker,type,price,cost) VALUES(?,?,?,?);',(ticker,type,price,cost))
     conn.commit()
 def delete_data(ticker):
-    c.execute('DELETE FROM portfoliotable WHERE ticker="{}"'.format(ticker))
+    c.execute('DELETE FROM stocktable WHERE ticker="{}"'.format(ticker))
     conn.commit()
 def view_all_data():
-    c.execute('SELECT * FROM  portfoliotable;')
+    c.execute('SELECT * FROM  stocktable;')
     data = c.fetchall()
     return data
 def view_all_ticker_names():
-    c.execute('SELECT DISTINCT ticker FROM portfoliotable;')
+    c.execute('SELECT DISTINCT ticker FROM stocktable;')
     data = c.fetchall()
     return data
 def get_ticker(ticker):
-    c.execute('SELECT * FROM  portfoliotable WHERE ticker="{}"'.format(ticker))
+    c.execute('SELECT * FROM  stocktable WHERE ticker="{}"'.format(ticker))
     data = c.fetchall()
     return data
 
 def edit_ticker_data(new_ticker,new_type,new_price,new_cost,ticker,type,price,cost):
-    c.execute("UPDATE portfoliotable SET ticker =?,type=?,price=? ,cost=?  WHERE ticker =? and type=? and price=? and cost=? ",(new_ticker,new_type,new_price,new_cost,ticker,type,price,cost))
+    c.execute("UPDATE stocktable SET ticker =?,type=?,price=? ,cost=?  WHERE ticker =? and type=? and price=? and cost=? ",(new_ticker,new_type,new_price,new_cost,ticker,type,price,cost))
     conn.commit()
     data = c.fetchall()
     return data
 
 # def delete_table():
-#     c.execute('DROP TABLE IF EXISTS portfoliotable;')
+#     c.execute('DROP TABLE IF EXISTS stocktable;')
 #     conn.commit()
 # delete_table()
-text4=st.empty()
 text2=st.empty()
+text4=st.empty()
 with text2.container():
     menu=["Login","Register"]
     choice=st.selectbox("Choose One",menu)
+
+
 
 # def delete_usertable():
 #                 c.execute('DROP TABLE IF EXISTS usertable;')
@@ -160,6 +179,9 @@ elif choice == "Login":
         submit = st.button('Submit')
 
         result = login_user(username,password)
+
+
+
     if result:
         pass
         text4.empty()
@@ -211,34 +233,9 @@ elif choice == "Login":
                 icons=['house', 'gear', 'gear', 'gear', 'gear'], menu_icon="cast", default_index=1)
 
         if selected == "Charts":
-            menu_data = [
-                {'icon': "far fa-copy", 'label':"Left End"},
-                {'id':'Copy','icon':"🐙",'label':"Copy"},
-                {'icon': "fa-solid fa-radar",'label':"Dropdown1", 'submenu':[{'id':' subid11','icon': "fa fa-paperclip", 'label':"Sub-item 1"},{'id':'subid12','icon': "💀", 'label':"Sub-item 2"},{'id':'subid13','icon': "fa fa-database", 'label':"Sub-item 3"}]},
-                {'icon': "far fa-chart-bar", 'label':"Chart"},#no tooltip message
-                {'id':' Crazy return value 💀','icon': "💀", 'label':"Calendar"},
-                {'icon': "fas fa-tachometer-alt", 'label':"Dashboard",'ttip':"I'm the Dashboard tooltip!"}, #can add a tooltip message
-                {'icon': "far fa-copy", 'label':"Right End"},
-                {'icon': "fa-solid fa-radar",'label':"Dropdown2", 'submenu':[{'label':"Sub-item 1", 'icon': "fa fa-meh"},{'label':"Sub-item 2"},{'icon':'🙉','label':"Sub-item 3",}]},
-            ]
-
-            over_theme = {'txc_inactive': '#FFFFFF'}
-            menu_id = hc.nav_bar(
-                menu_definition=menu_data,
-                override_theme=over_theme,
-                home_name='Home',
-                login_name='Logout',
-                hide_streamlit_markers=False, #will show the st hamburger as well as the navbar now!
-                sticky_nav=False, #at the top or not
-                sticky_mode='sticky', #jumpy or not-jumpy, but sticky or pinned
-            )
-
-            # st.title(f"{selected}")
-            #st.title("Stock prediction app")
             stocks=["AAPL","GOOG","MSFT","COST","AMD","FDX","SAVA","CANO"]
             selected_stocks=st.selectbox("Select A Ticker",stocks)
-            period=n_years=365
-
+            tab1, tab2,tab3,tab4,tab5 = st.tabs(["📈 Charts", "🗃 Stock Info","📰 News","🔍Pattern Finder","🔮 Prediction"])
             @st.cache
             def load_data(ticker):
                 data=yf.download(ticker)
@@ -247,13 +244,20 @@ elif choice == "Login":
                 data=data[['Date','Open','High','Low','Close']].to_numpy()
                 data = json.dumps(data,cls=NumpyArrayEncoder)
                 return data 
+            with tab1.subheader("Stock Chart"):
+          
+
+           
+                st.title="can you see me?"
+               
+                period=n_years=365
                 
-                #data=load_data(selected_stocks)
-                #print(data)
-                # print(selected_stocks)
-                # print(load_data(selected_stocks))
-            components.html(
-            """<html>
+                    #data=load_data(selected_stocks)
+                    #print(data)
+                    # print(selected_stocks)
+                    # print(load_data(selected_stocks))
+                components.html( """
+                <html>
                 <head>
                 <script src="https://cdn.anychart.com/themes/2.0.0/dark_provence.min.js"></script>
                 <script src="https://cdn.anychart.com/themes/2.0.0/dark_glamour.min.js"></script>
@@ -274,7 +278,6 @@ elif choice == "Login":
                     padding: 0;
                     color:white;
                     }
-
                 </style>
                 </head>
                 
@@ -282,7 +285,6 @@ elif choice == "Login":
                 <script>
                 var table, mapping, chart;
                 anychart.onDocumentReady(function () {
-
                 table = anychart.data.table();
                 table.addData(""" + load_data(selected_stocks) +  """);
             
@@ -293,7 +295,6 @@ elif choice == "Login":
                     mapping.addField('low', 3, 'min');
                     mapping.addField('close', 4, 'last');
                     mapping.addField('value', 4, 'last');
-
                     // defining the chart type
                     chart = anychart.stock();
                     
@@ -302,7 +303,6 @@ elif choice == "Login":
                     
                     // setting the chart title
                     chart.title('AnyStock Demo');
-
                     // display the chart	  
                     chart.container('container');
                     chart.draw();
@@ -318,147 +318,111 @@ elif choice == "Login":
             """,
                 height=600,
             )
-            components.html(
-            """<html>
-                <head>
-                <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-annotations.min.js"></script>
-                <script src="https://cdn.anychart.com/themes/2.0.0/dark_provence.min.js"></script>
-                <script src="https://cdn.anychart.com/themes/2.0.0/dark_glamour.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-stock.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
-                <link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
-                <link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
-                <style type="text/css">
-                    html, body {
-                        width: 100%;
-                        height: 100%;
-                        margin: 0;
-                        padding: 0;
-                    }
-                    select {
-                        margin: 10px 0 0 10px;
-                    }
-                    button {
-                        margin: 10px 0 0 5px;
-                    }
-                    #container {
-                        position: absolute;
-                        width: 100%;
-                        top: 35px;
-                        bottom: 0;
-                    }
+            with tab2.subheader("Stock Info"):
+                tab2.write("Info")
+                # from Stockie.stockie import stockie
+                # a = stockie(['UNVR.JK','AAPL','C6L.SI'])
+                # a.get_candlestick_report()
+            tab3.subheader("News")
+            tab3.write("News")
 
-                </style>
-                </head>
-                
-                
-                <script>
-                    anychart.onDocumentReady(function() {
-                // The data used in this sample can be obtained from the CDN
-                // https://cdn.anychart.com/csv-data/csco-daily.js
-
-                // create data table on loaded data
-                var dataTable = anychart.data.table();
-                dataTable.addData(""" + load_data(selected_stocks) +  """);
-
-                // map data for the ohlc series
-                var ohlcMapping = dataTable.mapAs({'open': 1, 'high': 2, 'low': 3, 'close': 4});
-
-                // map data for scroller and volume series
-                var valueMapping = dataTable.mapAs({'value': 5});
-
-                // create stock chart
-                var chart = anychart.stock();
-
-                // create and setup ohlc series on the first plot
-                var ohlcSeries = chart.plot(0).ohlc(ohlcMapping);
-                ohlcSeries.name('"""+ selected_stocks +"""');
-                ohlcSeries.legendItem().iconType('risingfalling');
-
-                // create and setup volume plot
-                var volumePlot = chart.plot(1);
-                volumePlot.height('30%');
-                volumePlot.yAxis().labels().format('${%Value}{scale:(1000000)(1000)|(kk)(k)}');
-
-                // create and setup ohlc series on the first plot
-                var volumeSeries = volumePlot.column(valueMapping);
-                volumeSeries.name('Volume');
-
-                // create scroller series
-                chart.scroller().area(valueMapping);
-
-                // set container id for the chart
-                chart.container('container');
-
-                // initiate chart drawing
-                chart.draw();
-
-                // create range picker
-                var rangePicker = anychart.ui.rangePicker();
-                // init range picker
-                rangePicker.render(chart);
-
-                // create range selector
-                var rangeSelector = anychart.ui.rangeSelector();
-                // init range selector
-                rangeSelector.render(chart);
-                });
-                
-                // allow drawing on the first plot
-                chart.plot(0).annotations().enabled(true);
-                chart.plot(1).annotations().enabled(true);
-
-                
-
-                // reset the select list to the first option
-                chart.listen("annotationDrawingFinish", function(){
-                    document.getElementById("typeSelect").value = "default";
-                });
-                
+            with tab4.subheader("Candlestick Pattern Finder"):
+                tab4.write("Candlestick Pattern Finder")
             
-                // create annotations
-                function create() {
-                    var select = document.getElementById("typeSelect");
-                    chart.annotations().startDrawing(select.value);   
-                }
+                from Stockie.stockie import stockie
+                a = stockie(['UNVR.JK','AAPL','AMZN.BA'])
+                df = a.find_pattern()['AAPL']
+                df=a.get_candlestick_report()
+                st.dataframe(df)
+                print(df)
+                print(df)
+                print(df)
+                print(df)
+                print(df)
+                print(df)
 
-                // remove all annotations
-                function removeAll() {
-                    chart.annotations().removeAllAnnotations();
-                }
-                    </script>
-                    </head>
-                    <body>
-                    <select id="typeSelect" onclick="create()">
-                        <option value="default" selected disabled>Annotation Type</option>
-                        <option value="andrews-pitchfork">Andrews' Pitchfork</option>
-                        <option value="ellipse">Ellipse</option>
-                        <option value="fibonacci-arc">Fibonacci Arc</option>
-                        <option value="fibonacci-fan">Fibonacci Fan</option>
-                        <option value="fibonacci-retracement">Fibonacci Retracement</option>
-                        <option value="fibonacci-timezones">Fibonacci Time Zones</option>  
-                        <option value="horizontal-line">Horizontal Line</option> 
-                        <option value="infinite-line">Infinite Line</option>
-                        <option value="line">Line Segment</option>
-                        <option value="marker">Marker</option>   
-                        <option value="ray">Ray</option>
-                        <option value="rectangle">Rectangle</option>
-                        <option value="trend-channel">Trend Channel</option>
-                        <option value="triangle">Triangle</option>
-                        <option value="vertical-line">Vertical Line</option>
-                    </select>
-                    <button onclick="removeAll()">Remove All</button>
-                        <div id="container" style="width: 100%; height: 100%"></div>
-                        """+selected_stocks+"""
-                    </body>
-                </html>
-            
-                """,
-                height=700,
-                )
+            with tab5.subheader("Stock Prediction"):
+                from keras import *
+                from keras.layers import Dense,Dropout, LSTM
+                from keras.models import Sequential
+                import pandas_datareader as data
+                from matplotlib import *
+                import matplotlib.pyplot as plt
+                from sklearn.preprocessing import MinMaxScaler
+                start='2010-01-01'
+                end='2022-01-01'
+                df=data.DataReader('AAPL','yahoo',start,end)
+                df=df.reset_index()
+                df=df.drop(['Date','Adj Close'],axis=1)
+                
+                st.subheader('Closing Price vs Time Chart 100MA')
+                ma100=df.Close.rolling(100).mean()
+                fig=plt.figure(figsize=(12,6))
+                plt.plot(ma100,'r')
+                plt.plot(df.Close)
+                st.pyplot(fig)
+                
+                st.subheader('Closing Price vs Time Chart 100MA &200MA')
+                ma100=df.Close.rolling(100).mean()
+                ma200=df.Close.rolling(200).mean()
+                fig=plt.figure(figsize=(12,6))
+                plt.plot(ma100,'r')
+                plt.plot(ma200,'r')
+                plt.plot(df.Close)
+                st.pyplot(fig)
+                
+                data_training =pd.DataFrame(df['Close'][0:int(len(df)*0.75)])
+                data_testing =pd.DataFrame(df['Close'][0:int(len(df)*0.75):int(len(df))])
+                scaler=MinMaxScaler(feature_range=(0,1))
+                data_training_array=scaler.fit_transform(data_training)
+                x_train=[]
+                y_train=[]
+                for i in range(100,data_training_array.shape[0]):
+                    x_train.append(data_training_array[i-100:i])
+                    y_train.append(data_training_array[i,0])
+                x_train,y_train=np.array(x_train),np.array(y_train)
+                # Machine Learning Model
+                model=Sequential()
+                model.add(LSTM(units= 50,activation='relu',return_sequences=True,input_shape=(x_train.shape[1],1)))
+                model.add(Dropout(0.2))
+                model.add(LSTM(units= 60,activation='relu',return_sequences=True))
+                model.add(Dropout(0.3))
+               
+                model.add(LSTM(units= 80,activation='relu',return_sequences=True))
+                model.add(Dropout(0.4))
+               
+                model.add(LSTM(units= 120,activation='relu'))
+                model.add(Dropout(0.5))
+                model.add(Dense(units=1))
+                
+                model.compile(optimizer="adam",loss="mean_squared_error")
+                model.fit(x_train,y_train,epochs=10)
+                
+                model.fit(x_train,y_train,epochs=10)
+                
+                past_100_days= data_training.tail(100)
+                final_df= past_100_days.append(data_testing,ignore_index=True)
+                input_data=scaler.fit_transform(final_df)   
+                x_test=[]
+                y_test=[]
+                for i in range(100,input_data.shape[0]):
+                    x_test.append(input_data[i-100:i])
+                    y_test.append(input_data[i,0])
+                x_test,y_test=np.array(x_test),np.array(y_test)   
+                y_predicted=model.predict(x_test)
+                scaler=scaler.scale_
+                scale_factor=1/scaler[0]
+                y_predicted=y_predicted* scale_factor
+                y_test=y_test*scale_factor
+                
+                st.subheader('Predictions vs Original')
+                fig2 =plt.figure(figsize=(12,6))
+                plt.plot(y_test,'b',label='Original Price ')
+                plt.plot(y_predicted,'r',label='Predicted Price ')
+                plt.xlabel('Time')
+                plt.xlabel('Price')
+                plt.legend()
+                st.pyplot(fig2)
         # if selected=="Bot":
         
             # import torch
@@ -527,151 +491,7 @@ elif choice == "Login":
 
         #     st.session_state.old_response = response
         if selected == "Technical Analysis":
-            st.title(f"{selected}")
-            #st.title("Stock prediction app")
-            stocks=["AAPL","GOOG","MSFT","COST","AMD","FDX","SAVA","CANO"]
-            selected_stocks=st.selectbox("Select A Ticker",stocks)
-
-            #@st.cache
-            def load_data(ticker):
-                data=yf.download(ticker)
-                data.reset_index(inplace =True)
-                data['Date'] = data['Date'].apply(lambda x: str(x.date()))
-                data=data[['Date','Open','High','Low','Close']].to_numpy()
-                data = json.dumps(data,cls=NumpyArrayEncoder)
-                return data 
-            components.html(
-            """<html>
-                <head>
-                <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-core.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-pie.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-exports.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-core.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-bundle.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-base.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-annotations.min.js"></script>
-                <script src="https://cdn.anychart.com/themes/2.0.0/dark_provence.min.js"></script>
-                <script src="https://cdn.anychart.com/themes/2.0.0/dark_glamour.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-stock.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
-                <link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
-                <link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
-                <style type="text/css">
-                    html, body {
-                        width: 100%;
-                        height: 100%;
-                        margin: 0;
-                        padding: 0;
-                    }
-                    select {
-                        margin: 10px 0 0 10px;
-                    }
-                    button {
-                        margin: 10px 0 0 5px;
-                    }
-                    #container {
-                        position: absolute;
-                        width: 100%;
-                        top: 35px;
-                        bottom: 0;
-                    }
-
-                </style>
-                </head>
-                
-                
-                <script>
-                                anychart.onDocumentReady(function () {
-
-                    // the data used in this sample can be obtained from the CDN
-                    // https://cdn.anychart.com/csv-data/csco-daily.js
-                    // create a data table using this data
-                    var dataTable = anychart.data.table();
-                    dataTable.addData(""" + load_data(selected_stocks) +  """);
-
-                    // map the data
-                    var mapping = dataTable.mapAs({"value": 4});
-
-                    // create a stock chart
-                    var chart = anychart.stock();
-
-                    // create a plot on the chart
-                    plot = chart.plot(0);
-
-                    // create a line series
-                    var lineSeries = plot.line(mapping);
-                    lineSeries.name('"""+ selected_stocks +"""');
-
-                    // set the chart title
-                    chart.title("Handling Events");
-
-                    // set the container id
-                    chart.container("container");
-
-                    // initiate drawing the chart
-                    chart.draw();
-
-                    // create an event listener for the annotationSelect event
-                    chart.listen("annotationSelect", function(e){
-                    var selectedAnnotation = e.annotation;
-                    // change the annotation stroke
-                    selectedAnnotation.selected().stroke("#FF0000", 3, "5 2", "round");
-                    // change the chart title
-                    chart.title("The " + selectedAnnotation.getType() +
-                                " annotation is selected.");
-                    });
-
-                    // reset the select list to the first option
-                    chart.listen("annotationDrawingFinish", function(){
-                    document.getElementById("typeSelect").value = "default";
-                    });
-                });
-
-                // create annotations
-                function create() {
-                var select = document.getElementById("typeSelect");
-                plot.annotations().startDrawing(select.value);
-                }
-
-                // remove annotations
-                function removeAll() {
-                plot.annotations().removeAllAnnotations();
-                }
-                    </script>
-                    </head>
-                    <body>
-                            <select id="typeSelect" onclick="create()">
-                    <option value="default" selected disabled>Annotation Type</option>
-                    <option value="andrews-pitchfork">Andrews' Pitchfork</option>
-                    <option value="ellipse">Ellipse</option>
-                    <option value="fibonacci-arc">Fibonacci Arc</option>
-                    <option value="fibonacci-fan">Fibonacci Fan</option>
-                    <option value="fibonacci-retracement">Fibonacci Retracement</option>
-                    <option value="fibonacci-timezones">Fibonacci Time Zones</option>  
-                    <option value="horizontal-line">Horizontal Line</option> 
-                    <option value="infinite-line">Infinite Line</option>
-                    <option value="line">Line Segment</option>
-                    <option value="marker">Marker</option> 
-                    <option value="ray">Ray</option>
-                    <option value="rectangle">Rectangle</option>
-                    <option value="trend-channel">Trend Channel</option>
-                    <option value="triangle">Triangle</option>
-                    <option value="vertical-line">Vertical Line</option>
-                    </select>
-                    <button onclick="removeAll()">Remove All</button>
-                    <div id="container" style="width: 100%; height: 100%"></div>
-                        """+selected_stocks+"""
-                    </body>
-                </html>
-            
-                """,
-                height=700,
-                width=1100,
-                )
-            
+            pass
         if selected == "Stock Dashboard":
             components.html("""
                     <head>
@@ -1283,9 +1103,9 @@ elif choice == "Login":
         if selected == "My Stocks":
             
 
-          
+            
             # st.markdown("<h1 style='text-align: center; color: White;'>My Portfolio</h1>", unsafe_allow_html=True)
-            menu=["Create","Read","Update","Delete","About"]
+            menu=["Create","Add","Read","Update","Delete"]
             choice=st.selectbox("Menu",menu)
             st.expander("View All")
             col1,col2,col3=st.columns(3)
@@ -1296,9 +1116,9 @@ elif choice == "Login":
             
             # st.write(result)
             
-            df = pd.DataFrame(result,columns=['Id','Ticker','Type','Price','Cost'])
+            df = pd.DataFrame(result,columns=['stock_id','ticker','type','price','cost'])
             st.dataframe(df)
-            ticker_df = df['Ticker'].value_counts().to_frame()
+            ticker_df = df['ticker'].value_counts().to_frame()
             # st.dataframe(ticker_df)
             ticker_df = ticker_df.reset_index()
             # st.dataframe(ticker_df)
@@ -1307,8 +1127,8 @@ elif choice == "Login":
             col2.subheader("Portfolio Linechart")
             col2.line_chart(df)
             with col1:
-                p1 = px.pie(ticker_df,names='index',values='Ticker')
-                p1 = px.pie(ticker_df,names='index',values='Ticker')
+                p1 = px.pie(ticker_df,names='index',values='ticker')
+                p1 = px.pie(ticker_df,names='index',values='ticker')
                 st.plotly_chart(p1,use_container_width=True)
             if choice =="Create":
                 st.subheader("Add")
@@ -1320,9 +1140,11 @@ elif choice == "Login":
                 with col3:
                     price=st.number_input("Price")
                     cost=st.number_input("Cost")
-                complete=st.button("Add To Portfolio")    
+                complete=st.button("Add Stock")   
+                person=seen_by_person()
                 if complete:
                     add_data(ticker,type,price,cost)
+                if complete and person:
                     st.success("Successfully Added Data:")
                     
             elif choice=="Update":
@@ -1358,7 +1180,7 @@ elif choice == "Login":
                         new_cost=st.number_input(label='cost')
 
                     if st.button("Update Task"):
-                        edit_ticker_data(new_ticker,new_shares,new_type,new_date,new_price,new_cost,ticker,shares,type,date,price,cost)
+                        edit_ticker_data(new_ticker,new_shares,new_type,new_date,new_price,new_cost,ticker,type,price,cost)
                         st.success("Updated ::{} ::To {}".format(ticker,new_ticker))
                     with st.expander("View Updated Data"):
                         result = view_all_data()
@@ -1386,7 +1208,27 @@ elif choice == "Login":
                     # st.write(result)
                     clean_df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
                     st.dataframe(clean_df)
-            else :
-                st.error("Incorrect Password/Username")
-
+            elif choice=="Add":
+                added=view_all_stocks_user()
+                df = pd.DataFrame(added,columns=['user_id','stock_id','shares','date'])
+                st.dataframe(df)
+                ticker_df = df['shares'].value_counts().to_frame()
+                # st.dataframe(ticker_df)
+                ticker_df = ticker_df.reset_index()
+                # st.dataframe(ticker_df)
+                
+                col1,col2= st.columns(2)
+                with col1:
+                    stock_id=st.number_input("stock_id")
+                
+                with col2:
+                    shares=st.number_input("shares")
+                    date=st.date_input("date")
+                
+                portfolio=st.button("Add To Portfolio")   
+                seen=seen_by_person()
+                if portfolio:
+                    add_stocks_usertable(user_id,stock_id,shares,date)
+                if portfolio and seen:
+                    st.success("Successfully Added Data:")
             
