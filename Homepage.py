@@ -51,31 +51,34 @@ from st_on_hover_tabs import on_hover_tabs
 from yaml import SafeLoader
 import yaml
 # Main App
-st.set_page_config(page_title="Fintero", page_icon=":stock_chart:", layout="wide" ,initial_sidebar_state='collapsed',)
+st.set_page_config(page_title="Fintero", page_icon=":stock_chart:", layout="wide" ,)
 st.write('<style>div.block-container{padding-top:2rem;}</style>', unsafe_allow_html=True) 
 #  Login Page
 import sqlite3
 conn=sqlite3.connect('data.db')
 conn=sqlite3.connect('data.db')
 c=conn.cursor()
-
+st.cache(allow_output_mutation=True)
 def create_usertable():
     c.execute('CREATE TABLE IF NOT EXISTS usertable(user_id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT, password TEXT);')
 create_usertable()
+st.cache(allow_output_mutation=True)
 def create_stocks_usertable():
     c.execute('CREATE TABLE IF NOT EXISTS stocks_usertable(user_id INTEGER, stock_id INTEGER, shares INTEGER, date DATE ,PRIMARY KEY (user_id, stock_id,date,shares),FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,FOREIGN KEY (stock_id) REFERENCES stock(stock_id) ON DELETE CASCADE) ;')
 create_stocks_usertable()
-
+st.cache(allow_output_mutation=True)
 def create_table():
     c.execute('CREATE TABLE IF NOT EXISTS stocktable(stock_id INTEGER PRIMARY KEY AUTOINCREMENT,ticker TEXT, type TEXT, price INTEGER, cost INTEGER);')
 create_table()
-
+st.cache(allow_output_mutation=True)
 def add_userdata(username,password):
     c.execute('INSERT INTO usertable(username, password) VALUES(?,?);',(username,password))
     conn.commit()
+st.cache(allow_output_mutation=True)
 def delete_userdata():
     c.execute('DELETE FROM usertable WHERE username="{}"'.format(username))
     conn.commit()
+st.cache(allow_output_mutation=True)
 def login_user(username,password):
     global user_id
     c.execute('SELECT * FROM  usertable WHERE username=? AND password=?;',(username,password))
@@ -83,30 +86,30 @@ def login_user(username,password):
     if(len(data) > 0):
         user_id = data[0][0]
     return data
+st.cache(allow_output_mutation=True)
 def view_all_stocks_user():
-    c.execute('SELECT * FROM  stocks_usertable WHERE user_id='+ str(user_id) +';')
+    c.execute('SELECT * FROM  stocks_usertable WHERE  stocks_usertable.user_id=' + str(user_id) +';')
     data = c.fetchall()
     return data
 
 
-
+st.cache(allow_output_mutation=True)
 def add_stocks_usertable(user_id,stock_id,shares,date):
     c.execute('INSERT INTO stocks_usertable(user_id,stock_id,shares,date) VALUES(?,?,?,?);',(user_id,stock_id,shares,date))
     conn.commit()
+    
+st.cache(allow_output_mutation=True)
 def delete_stocks_usertable(ticker):
     c.execute('DELETE FROM stocks_usertable WHERE ticker="{}"'.format(ticker))
     conn.commit()
 # def view_all_stocks_usertable():
 #     c.execute('SELECT * FROM  stocks_usertable JOIN stocktable ON stocks_usertable.stock_id = stocktable.stock_id JOIN usertable ON stocks_usertable.user_id=usertable.user_id WHERE stocks_usertable.user_id=usertable.user_id  ;')
 #     data = c.fetchall()
-#     return data
+#     return 
+
+st.cache(allow_output_mutation=True)
 def seen_by_person():
     sql='SELECT * FROM stocks_usertable JOIN stocktable ON stocks_usertable.stock_id = stocktable.stock_id JOIN usertable ON stocks_usertable.user_id=usertable.user_id WHERE  stocks_usertable.user_id=' + str(user_id) +';'
-    print(sql)
-    print(sql)
-    print(sql)
-    print(sql)
-    print(sql)
     c.execute(sql)
     data = c.fetchall()
     return data
@@ -118,21 +121,30 @@ def seen_by_person():
 # print(view_all_stocks_usertable())
 # print(view_all_stocks_usertable())
 
-
+global df
+global msft
+st.cache(allow_output_mutation=True)
 def add_data(ticker,type,price,cost):
     c.execute('INSERT INTO stocktable(ticker,type,price,cost) VALUES(?,?,?,?);',(ticker,type,price,cost))
     conn.commit()
+    
+st.cache(allow_output_mutation=True)
 def delete_data(ticker):
     c.execute('DELETE FROM stocktable WHERE ticker="{}"'.format(ticker))
     conn.commit()
+    
+st.cache(allow_output_mutation=True)
 def view_all_data():
     c.execute('SELECT * FROM  stocktable;')
     data = c.fetchall()
     return data
+
+st.cache(allow_output_mutation=True)
 def view_all_ticker_names():
     c.execute('SELECT DISTINCT ticker FROM stocktable;')
     data = c.fetchall()
     return data
+st.cache(allow_output_mutation=True)
 def get_ticker(ticker):
     c.execute('SELECT * FROM  stocktable WHERE ticker="{}"'.format(ticker))
     data = c.fetchall()
@@ -155,38 +167,35 @@ with text2.container():
     choice=st.selectbox("Choose One",menu)
 
 
-
+# global msft
 # def delete_usertable():
 #                 c.execute('DROP TABLE IF EXISTS usertable;')
 #                 conn.commit()
 # delete_usertable()
-if choice == "Register":
+if choice == "Register" :
     
-    st.title="register"
-    new_user=st.text_input("Set Your Username")
-    new_password= st.text_input("Set Your Password",type='password')
+    st.session_state.new_user=st.text_input("Set Your Username")
+    st.session_state.new_password= st.text_input("Set Your Password",type='password')
     to_register=st.button("Register")
     if to_register:
-        add_userdata(new_user,new_password)
-        st.success("Welcome Onboard {}".format(new_user))
+        add_userdata(st.session_state.new_user,st.session_state.new_password)
+        st.success("Welcome Onboard {}".format(st.session_state.new_user))
         st.info("Go to login Menu to login")
    
-elif choice == "Login":
+elif choice == "Login" :
     with text4.container():
-
-        username= st.text_input("Username")
-        password= st.text_input("password",type='password')
+        st.session_state.username= st.text_input("Username")
+        st.session_state.password= st.text_input("password",type='password')
         submit = st.button('Submit')
 
-        result = login_user(username,password)
+        result = login_user( st.session_state.username,st.session_state.password)
 
 
 
-    if result:
-        pass
+    if result :
         text4.empty()
         text2.empty()
-        st.sidebar.write(f'{username}')
+        st.sidebar.write(f'{st.session_state.username}')
         def get_data(selected_stocks):
             return [
                 ['2015-12-25', 512.53, 514.88, 505.69, 507.34],
@@ -228,14 +237,13 @@ elif choice == "Login":
 
 
         with st.sidebar:
-
-            selected = option_menu("Home", ["My Stocks","Charts","News","Stock Dashboard","Bot","Fundamental","Sentiment Analysis","Technical Analysis","Sentiment Analysis"],  
+            selected = option_menu("Home", ["My Stocks","Charts","News","Top Picks","Trend Prediction"],  
                 icons=['house', 'gear', 'gear', 'gear', 'gear'], menu_icon="cast", default_index=1)
 
         if selected == "Charts":
             stocks=["AAPL","GOOG","MSFT","COST","AMD","FDX","SAVA","CANO"]
             selected_stocks=st.selectbox("Select A Ticker",stocks)
-            tab1, tab2,tab3,tab4,tab5 = st.tabs(["📈 Charts", "🗃 Stock Info","📰 News","🔍Pattern Finder","🔮 Prediction"])
+            tab1, tab2,tab3,tab4,tab5 = st.tabs(["📈 Charts", "🗃 Stock Info","📰 Fundamentals","🔍Pattern Finder","🔮 Prediction"])
             @st.cache
             def load_data(ticker):
                 data=yf.download(ticker)
@@ -244,87 +252,187 @@ elif choice == "Login":
                 data=data[['Date','Open','High','Low','Close']].to_numpy()
                 data = json.dumps(data,cls=NumpyArrayEncoder)
                 return data 
-            with tab1.subheader("Stock Chart"):
-          
+            with tab1.subheader("Charts"):
+                components.html(
+                """<html>
+                    <head>
+                    <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-core.min.js"></script>
+                    <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-pie.min.js"></script>
+                    <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-exports.min.js"></script>
+                    <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-core.min.js"></script>
+                    <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-bundle.min.js"></script>
+                    <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-base.min.js"></script>
+                    <script src="https://cdn.anychart.com/releases/8.11.0/js/anychart-annotations.min.js"></script>
+                    <script src="https://cdn.anychart.com/themes/2.0.0/dark_provence.min.js"></script>
+                    <script src="https://cdn.anychart.com/themes/2.0.0/dark_glamour.min.js"></script>
+                    <script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
+                    <script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
+                    <script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
+                    <script src="https://cdn.anychart.com/releases/v8/js/anychart-stock.min.js"></script>
+                    <script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
+                    <link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
+                    <link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
+                    <style type="text/css">
+                        html, body {
+                            width: 100%;
+                            height: 100%;
+                            margin: 0;
+                            padding: 0;
+                        }
+                        select {
+                            margin: 10px 0 0 10px;
+                        }
+                        button {
+                            margin: 10px 0 0 5px;
+                        }
+                        #container {
+                            position: absolute;
+                            width: 100%;
+                            top: 35px;
+                            bottom: 0;
+                        }
 
-           
-                st.title="can you see me?"
-               
-                period=n_years=365
-                
-                    #data=load_data(selected_stocks)
-                    #print(data)
-                    # print(selected_stocks)
-                    # print(load_data(selected_stocks))
-                components.html( """
-                <html>
-                <head>
-                <script src="https://cdn.anychart.com/themes/2.0.0/dark_provence.min.js"></script>
-                <script src="https://cdn.anychart.com/themes/2.0.0/dark_glamour.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-stock.min.js"></script>
-                <script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
-                <link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
-                <link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
-                <style type="text/css">
-                    html,
-                    body,
-                    #container {
-                    width: 100%;
-                    height: 100%;
-                    margin: 0;
-                    padding: 0;
-                    color:white;
-                    }
-                </style>
-                </head>
-                
-                
-                <script>
-                var table, mapping, chart;
-                anychart.onDocumentReady(function () {
-                table = anychart.data.table();
-                table.addData(""" + load_data(selected_stocks) +  """);
-            
-                    // mapping the data
-                    mapping = table.mapAs();
-                    mapping.addField('open', 1, 'first');
-                    mapping.addField('high', 2, 'max');
-                    mapping.addField('low', 3, 'min');
-                    mapping.addField('close', 4, 'last');
-                    mapping.addField('value', 4, 'last');
-                    // defining the chart type
-                    chart = anychart.stock();
-                    
-                    // set the series type
-                    chart.plot(0).ohlc(mapping).name('"""+ selected_stocks +"""');
-                    
-                    // setting the chart title
-                    chart.title('AnyStock Demo');
-                    // display the chart	  
-                    chart.container('container');
-                    chart.draw();
-                    });
-                    </script>
+                    </style>
                     </head>
-                    <body>
+                    
+                    
+                    <script>
+                                    anychart.onDocumentReady(function () {
+
+                        // the data used in this sample can be obtained from the CDN
+                        // https://cdn.anychart.com/csv-data/csco-daily.js
+                        // create a data table using this data
+                        var dataTable = anychart.data.table();
+                        dataTable.addData(""" + load_data(selected_stocks) +  """);
+
+                        // map the data
+                        var mapping = dataTable.mapAs({"value": 4});
+
+                        // create a stock chart
+                        var chart = anychart.stock();
+
+                        // create a plot on the chart
+                        plot = chart.plot(0);
+
+                        // create a line series
+                        var lineSeries = plot.line(mapping);
+                        lineSeries.name('"""+ selected_stocks +"""');
+
+                        // set the chart title
+                        chart.title("Handling Events");
+
+                        // set the container id
+                        chart.container("container");
+
+                        // initiate drawing the chart
+                        chart.draw();
+
+                        // create an event listener for the annotationSelect event
+                        chart.listen("annotationSelect", function(e){
+                        var selectedAnnotation = e.annotation;
+                        // change the annotation stroke
+                        selectedAnnotation.selected().stroke("#FF0000", 3, "5 2", "round");
+                        // change the chart title
+                        chart.title("The " + selectedAnnotation.getType() +
+                                    " annotation is selected.");
+                        });
+
+                        // reset the select list to the first option
+                        chart.listen("annotationDrawingFinish", function(){
+                        document.getElementById("typeSelect").value = "default";
+                        });
+                    });
+
+                    // create annotations
+                    function create() {
+                    var select = document.getElementById("typeSelect");
+                    plot.annotations().startDrawing(select.value);
+                    }
+
+                    // remove annotations
+                    function removeAll() {
+                    plot.annotations().removeAllAnnotations();
+                    }
+                        </script>
+                        </head>
+                        <body>
+                                <select id="typeSelect" onclick="create()">
+                        <option value="default" selected disabled>Annotation Type</option>
+                        <option value="andrews-pitchfork">Andrews' Pitchfork</option>
+                        <option value="ellipse">Ellipse</option>
+                        <option value="fibonacci-arc">Fibonacci Arc</option>
+                        <option value="fibonacci-fan">Fibonacci Fan</option>
+                        <option value="fibonacci-retracement">Fibonacci Retracement</option>
+                        <option value="fibonacci-timezones">Fibonacci Time Zones</option>  
+                        <option value="horizontal-line">Horizontal Line</option> 
+                        <option value="infinite-line">Infinite Line</option>
+                        <option value="line">Line Segment</option>
+                        <option value="marker">Marker</option> 
+                        <option value="ray">Ray</option>
+                        <option value="rectangle">Rectangle</option>
+                        <option value="trend-channel">Trend Channel</option>
+                        <option value="triangle">Triangle</option>
+                        <option value="vertical-line">Vertical Line</option>
+                        </select>
+                        <button onclick="removeAll()">Remove All</button>
                         <div id="container" style="width: 100%; height: 100%"></div>
-                        """+selected_stocks+"""
-                    </body>
-                </html>
-            
-            """,
-                height=600,
-            )
+                            """+selected_stocks+"""
+                        </body>
+                    </html>
+                
+                    """,
+                    height=700,
+                    )
             with tab2.subheader("Stock Info"):
-                tab2.write("Info")
-                # from Stockie.stockie import stockie
-                # a = stockie(['UNVR.JK','AAPL','C6L.SI'])
-                # a.get_candlestick_report()
-            tab3.subheader("News")
-            tab3.write("News")
+                def get_info():
+                    msft= yf.Ticker("MSFT")
+                    return msft.info
+                components.html("""
+                <!DOCTYPE>
+                <html>
+                <head></head>
+                <body>
+                <h1>Hello</h1>
+                <div id="info"></div>
+                <script>
+                
+                let obj="""+ str(get_info()) + """;
+                let my_json=JSON.stringify(obj);
+                let parsed_obj=JSON.parse(my_json);
+                
+                document.getElementById("info").innerHTML +=  "Converting JSON to HTML <br><br>" + "Sector:" + parsed_obj.sector  + "Full Time Employees: " +parsed_obj.fullTimeEmployees +"Business Summary: " + parsed_obj.longBusinessSummary +"Country: " + parsed_obj.country;
+            
+                </script>    
+                </body>
+                <html>          
+                                
+                               """,height=1000)
+            with tab3.subheader("News"):
+                tab3.write("News")
+                # from yahoostats.evaluator import combine_stats
+                # from selenium import webdriver
+
+                # from webdriver_manager.chrome import ChromeDriverManager
+                # from webdriver_manager.core.utils import ChromeType
+
+                # driver = webdriver.Chrome(ChromeDriverManager(
+                #     chrome_type=ChromeType.CHROMIUM).install())
+
+                # # driver.get("http://www.python.org")
+
+                # stocklist = ['GOOGL', 'TSLA', 'AMD']
+                # combine_stats(stocklist)
+                # driver.close()
+                import yfinance as yf
+
+                
+                # msft.institutional_holders
+                # msft.recommendations
+                
+                # get stock info
+                # msft.info
+                # msft.actions()
+                # hist = msft.get_history(period=yf.TimePeriods.Quarter)
 
             with tab4.subheader("Candlestick Pattern Finder"):
                 tab4.write("Candlestick Pattern Finder")
@@ -342,87 +450,7 @@ elif choice == "Login":
                 print(df)
 
             with tab5.subheader("Stock Prediction"):
-                from keras import *
-                from keras.layers import Dense,Dropout, LSTM
-                from keras.models import Sequential
-                import pandas_datareader as data
-                from matplotlib import *
-                import matplotlib.pyplot as plt
-                from sklearn.preprocessing import MinMaxScaler
-                start='2010-01-01'
-                end='2022-01-01'
-                df=data.DataReader('AAPL','yahoo',start,end)
-                df=df.reset_index()
-                df=df.drop(['Date','Adj Close'],axis=1)
-                
-                st.subheader('Closing Price vs Time Chart 100MA')
-                ma100=df.Close.rolling(100).mean()
-                fig=plt.figure(figsize=(12,6))
-                plt.plot(ma100,'r')
-                plt.plot(df.Close)
-                st.pyplot(fig)
-                
-                st.subheader('Closing Price vs Time Chart 100MA &200MA')
-                ma100=df.Close.rolling(100).mean()
-                ma200=df.Close.rolling(200).mean()
-                fig=plt.figure(figsize=(12,6))
-                plt.plot(ma100,'r')
-                plt.plot(ma200,'r')
-                plt.plot(df.Close)
-                st.pyplot(fig)
-                
-                data_training =pd.DataFrame(df['Close'][0:int(len(df)*0.75)])
-                data_testing =pd.DataFrame(df['Close'][0:int(len(df)*0.75):int(len(df))])
-                scaler=MinMaxScaler(feature_range=(0,1))
-                data_training_array=scaler.fit_transform(data_training)
-                x_train=[]
-                y_train=[]
-                for i in range(100,data_training_array.shape[0]):
-                    x_train.append(data_training_array[i-100:i])
-                    y_train.append(data_training_array[i,0])
-                x_train,y_train=np.array(x_train),np.array(y_train)
-                # Machine Learning Model
-                model=Sequential()
-                model.add(LSTM(units= 50,activation='relu',return_sequences=True,input_shape=(x_train.shape[1],1)))
-                model.add(Dropout(0.2))
-                model.add(LSTM(units= 60,activation='relu',return_sequences=True))
-                model.add(Dropout(0.3))
-               
-                model.add(LSTM(units= 80,activation='relu',return_sequences=True))
-                model.add(Dropout(0.4))
-               
-                model.add(LSTM(units= 120,activation='relu'))
-                model.add(Dropout(0.5))
-                model.add(Dense(units=1))
-                
-                model.compile(optimizer="adam",loss="mean_squared_error")
-                model.fit(x_train,y_train,epochs=10)
-                
-                model.fit(x_train,y_train,epochs=10)
-                
-                past_100_days= data_training.tail(100)
-                final_df= past_100_days.append(data_testing,ignore_index=True)
-                input_data=scaler.fit_transform(final_df)   
-                x_test=[]
-                y_test=[]
-                for i in range(100,input_data.shape[0]):
-                    x_test.append(input_data[i-100:i])
-                    y_test.append(input_data[i,0])
-                x_test,y_test=np.array(x_test),np.array(y_test)   
-                y_predicted=model.predict(x_test)
-                scaler=scaler.scale_
-                scale_factor=1/scaler[0]
-                y_predicted=y_predicted* scale_factor
-                y_test=y_test*scale_factor
-                
-                st.subheader('Predictions vs Original')
-                fig2 =plt.figure(figsize=(12,6))
-                plt.plot(y_test,'b',label='Original Price ')
-                plt.plot(y_predicted,'r',label='Predicted Price ')
-                plt.xlabel('Time')
-                plt.xlabel('Price')
-                plt.legend()
-                st.pyplot(fig2)
+               pass
         # if selected=="Bot":
         
             # import torch
@@ -490,609 +518,7 @@ elif choice == "Login":
         #     st.write(f'Chatbot: {response}')
 
         #     st.session_state.old_response = response
-        if selected == "Technical Analysis":
-            pass
-        if selected == "Stock Dashboard":
-            components.html("""
-                    <head>
-                    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.1/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-iYQeCzEYFbKjA/T2uDLTpkwGzCiq6soy8tYaI1GyVh/UjpbCx/TYkiZhlZB6+fzT" crossorigin="anonymous">
-                    <style>
-                    body {
-                    background-color: hsl(218, 41%, 15%);
-                    background-image: radial-gradient(
-                        650px circle at 0% 0%,
-                        hsl(218, 41%, 35%) 15%,
-                        hsl(218, 41%, 30%) 35%,
-                        hsl(218, 41%, 20%) 75%,
-                        hsl(218, 41%, 19%) 80%,
-                        transparent 100%
-                    ),
-                        radial-gradient(
-                        1250px circle at 100% 100%,
-                        hsl(218, 41%, 45%) 15%,
-                        hsl(218, 41%, 30%) 35%,
-                        hsl(218, 41%, 20%) 75%,
-                        hsl(218, 41%, 19%) 80%,
-                        transparent 100%
-                        );
-                    height: 100vh;
-                    padding-left: 70px;
-                    overflow-x: hidden;
-                    color: #fff;
-                    }
-                    @media (max-width: 991.98px) {
-                    body {
-                        height: 100%;
-                    }
-                    }
-                    .bg-theme {
-                    background-color: hsl(218, 41%, 25%);
-                    }
-                    .bg-glass {
-                    background: hsla(0, 0%, 100%, 0.15);
-                    backdrop-filter: blur(30px);
-                    }
-                    .text-muted {
-                    color: hsl(0, 0%, 80%) !important;
-                    }
-                    .text-success {
-                    color: hsl(144, 100%, 40.9%) !important;
-                    }
-                    .text-danger {
-                    color: hsl(350, 94.3%, 68.4%) !important;
-                    }
-                    .border-bottom {
-                    border-bottom: 1px solid hsl(0, 0%, 50%) !important;
-                    }
-                    .badge {
-                    padding: 5px 10px;
-                    }
-                    </style>
-                        
-                        
-                        </head>
-                                <!-- Sidenav-->
-                    <nav
-                        id="sidenav-4"
-                        class="sidenav bg-glass opacity-100"
-                        data-mdb-color="light"
-                        data-mdb-mode="side"
-                        data-mdb-slim="true"
-                        data-mdb-slim-collapsed="true"
-                        data-mdb-content="#slim-content"
-                        >
-                    <div class="sidenav-item mb-2">
-                        <a
-                        id="slim-toggler"
-                        class="sidenav-link d-flex justify-content-center border-bottom"
-                        >
-                        <i class="fas fa-chevron-circle-right"></i>
-                        </a>
-                    </div>
-
-                    <ul class="sidenav-menu">
-                        <li class="sidenav-item">
-                        <a class="sidenav-link">
-                            <i class="fas fa-chart-area fa-fw me-3"></i
-                            ><span data-mdb-slim="false">Website traffic</span></a
-                            >
-                        </li>
-                        <li class="sidenav-item">
-                        <a class="sidenav-link">
-                            <i class="fas fa-chart-line fa-fw me-3"></i
-                            ><span data-mdb-slim="false">Analytics</span></a
-                            >
-                        </li>
-                        <li class="sidenav-item">
-                        <a class="sidenav-link">
-                            <i class="fas fa-chart-pie fa-fw me-3"></i
-                            ><span data-mdb-slim="false">SEO</span></a
-                            >
-                        </li>
-                        <li class="sidenav-item">
-                        <a class="sidenav-link">
-                            <i class="fas fa-money-bill fa-fw me-3"></i
-                            ><span data-mdb-slim="false">Sales</span></a
-                            >
-                        </li>
-                        <li class="sidenav-item">
-                        <a class="sidenav-link">
-                            <i class="fas fa-users fa-fw me-3"></i
-                            ><span data-mdb-slim="false">Users</span></a
-                            >
-                        </li>
-                    </ul>
-                    </nav>
-                    <!-- Sidenav-->
-
-                    <!-- Main content -->
-                    <div class="container py-5">
-                    <!-- Section: Summary -->
-                    <section class="mb-5">
-                        <div class="row gx-xl-5">
-                        <div class="col-xl-3 col-md-6 mb-4 mb-xl-0">
-                            <!-- Card -->
-                            <a
-                            class="
-                                    d-flex
-                                    align-items-center
-                                    p-4
-                                    bg-glass
-                                    shadow-4-strong
-                                    rounded-6
-                                    text-reset
-                                    ripple
-                                    "
-                            href="#"
-                            data-ripple-color="hsl(0, 0%, 75%)"
-                            >
-                            <div class="p-3 bg-theme rounded-4">
-                                <i class="fas fa-users fa-lg text-white fa-fw"></i>
-                            </div>
-
-                            <div class="ms-4">
-                                <p class="text-muted mb-2">Users</p>
-                                <p class="mb-0">
-                                <span class="h5 me-2">14 567 </span>
-                                <small class="text-success text-sm"
-                                        ><i class="fas fa-arrow-up fa-sm me-1"></i>13,48%</small
-                                    >
-                                </p>
-                            </div>
-                            </a>
-                            <!-- Card -->
-                        </div>
-
-                        <div class="col-xl-3 col-md-6 mb-4 mb-xl-0">
-                            <!-- Card -->
-                            <a
-                            class="
-                                    d-flex
-                                    align-items-center
-                                    p-4
-                                    bg-glass
-                                    shadow-4-strong
-                                    rounded-6
-                                    text-reset
-                                    ripple
-                                    "
-                            href="#"
-                            data-ripple-color="hsl(0, 0%, 75%)"
-                            >
-                            <div class="p-3 bg-theme rounded-4">
-                                <i class="fas fa-file-alt fa-lg text-white fa-fw"></i>
-                            </div>
-
-                            <div class="ms-4">
-                                <p class="text-muted mb-2">Page views</p>
-                                <p class="mb-0">
-                                <span class="h5 me-2">51 354</span>
-                                <small class="text-success text-sm"
-                                        ><i class="fas fa-arrow-up fa-sm me-1"></i>23,58%</small
-                                    >
-                                </p>
-                            </div>
-                            </a>
-                            <!-- Card -->
-                        </div>
-
-                        <div class="col-xl-3 col-md-6 mb-4 mb-xl-0">
-                            <!-- Card -->
-                            <a
-                            class="
-                                    d-flex
-                                    align-items-center
-                                    p-4
-                                    bg-glass
-                                    shadow-4-strong
-                                    rounded-6
-                                    text-reset
-                                    ripple
-                                    "
-                            href="#"
-                            data-ripple-color="hsl(0, 0%, 75%)"
-                            >
-                            <div class="p-3 bg-theme rounded-4">
-                                <i class="fas fa-clock fa-lg text-white fa-fw"></i>
-                            </div>
-
-                            <div class="ms-4">
-                                <p class="text-muted mb-2">Average time</p>
-                                <p class="mb-0">
-                                <span class="h5 me-2">00:04:20</span>
-                                <small class="text-danger text-sm"
-                                        ><i class="fas fa-arrow-down fa-sm me-1"></i>23,58%</small
-                                    >
-                                </p>
-                            </div>
-                            </a>
-                            <!-- Card -->
-                        </div>
-
-                        <div class="col-xl-3 col-md-6 mb-4 mb-xl-0">
-                            <!-- Card -->
-                            <a
-                            class="
-                                    d-flex
-                                    align-items-center
-                                    p-4
-                                    bg-glass
-                                    shadow-4-strong
-                                    rounded-6
-                                    text-reset
-                                    ripple
-                                    "
-                            href="#"
-                            data-ripple-color="hsl(0, 0%, 75%)"
-                            >
-                            <div class="p-3 bg-theme rounded-4">
-                                <i class="fas fa-sign-out-alt fa-lg text-white fa-fw"></i>
-                            </div>
-
-                            <div class="ms-4">
-                                <p class="text-muted mb-2">Bounce rate</p>
-                                <p class="mb-0">
-                                <span class="h5 me-2">32.35% </span>
-                                <small class="text-success text-sm"
-                                        ><i class="fas fa-arrow-down fa-sm me-1"></i>23,58%</small
-                                    >
-                                </p>
-                            </div>
-                            </a>
-                            <!-- Card -->
-                        </div>
-                        </div>
-                    </section>
-                    <!-- Section: Summary -->
-
-                    <!-- Section: Table -->
-                    <section class="mb-5">
-                        <div class="table-responsive bg-glass shadow-4-strong rounded-6">
-                        <table
-                                class="
-                                        table table-borderless table-hover
-                                        align-middle
-                                        mb-0
-                                        text-white
-                                        "
-                                >
-                            <thead class="">
-                            <tr>
-                                <th>Name</th>
-                                <th>Title</th>
-                                <th>Status</th>
-                                <th>Position</th>
-                                <th>Actions</th>
-                            </tr>
-                            </thead>
-                            <tbody class="">
-                            <tr class="text-white">
-                                <td>
-                                <div class="d-flex align-items-center">
-                                    <img
-                                        src="https://mdbootstrap.com/img/new/avatars/8.jpg"
-                                        alt=""
-                                        style="width: 45px; height: 45px"
-                                        class="rounded-circle"
-                                        />
-                                    <div class="ms-3">
-                                    <p class="fw-bold mb-1">John Doe</p>
-                                    <p class="text-muted mb-0">john.doe@gmail.com</p>
-                                    </div>
-                                </div>
-                                </td>
-                                <td>
-                                <p class="fw-bold mb-1">Software engineer</p>
-                                <p class="text-muted mb-0">IT department</p>
-                                </td>
-                                <td>
-                                <span class="badge badge-success rounded-pill">Active</span>
-                                </td>
-                                <td>Senior</td>
-                                <td>
-                                <button
-                                        type="button"
-                                        class="btn btn-outline-white btn-sm btn-rounded"
-                                        >
-                                    Edit
-                                </button>
-                                </td>
-                            </tr>
-                            <tr class="text-white">
-                                <td>
-                                <div class="d-flex align-items-center">
-                                    <img
-                                        src="https://mdbootstrap.com/img/new/avatars/6.jpg"
-                                        class="rounded-circle"
-                                        alt=""
-                                        style="width: 45px; height: 45px"
-                                        />
-                                    <div class="ms-3">
-                                    <p class="fw-bold mb-1">Alex Ray</p>
-                                    <p class="text-muted mb-0">alex.ray@gmail.com</p>
-                                    </div>
-                                </div>
-                                </td>
-                                <td>
-                                <p class="fw-normal mb-1">Consultant</p>
-                                <p class="text-muted mb-0">Finance</p>
-                                </td>
-                                <td>
-                                <span class="badge badge-primary rounded-pill"
-                                        >Onboarding</span
-                                    >
-                                </td>
-                                <td>Junior</td>
-                                <td>
-                                <button
-                                        type="button"
-                                        class="btn btn-outline-white btn-rounded btn-sm fw-bold"
-                                        >
-                                    Edit
-                                </button>
-                                </td>
-                            </tr>
-                            <tr class="text-white">
-                                <td>
-                                <div class="d-flex align-items-center">
-                                    <img
-                                        src="https://mdbootstrap.com/img/new/avatars/7.jpg"
-                                        class="rounded-circle"
-                                        alt=""
-                                        style="width: 45px; height: 45px"
-                                        />
-                                    <div class="ms-3">
-                                    <p class="fw-bold mb-1">Kate Hunington</p>
-                                    <p class="text-muted mb-0">kate.hunington@gmail.com</p>
-                                    </div>
-                                </div>
-                                </td>
-                                <td>
-                                <p class="fw-normal mb-1">Designer</p>
-                                <p class="text-muted mb-0">UI/UX</p>
-                                </td>
-                                <td>
-                                <span class="badge badge-warning rounded-pill">Awaiting</span>
-                                </td>
-                                <td>Senior</td>
-                                <td>
-                                <button
-                                        type="button"
-                                        class="btn btn-outline-white btn-rounded btn-sm fw-bold"
-                                        >
-                                    Edit
-                                </button>
-                                </td>
-                            </tr>
-                            </tbody>
-                        </table>
-                        </div>
-                    </section>
-                    <!-- Section: Table -->
-
-                    <!-- Section: Visualization -->
-                    <section class="">
-                        <div class="row gx-lg-5">
-                        <div class="col-lg-6 col-md-12 mb-4 mb-lg-0">
-                            <!-- Card -->
-                            <div class="bg-glass shadow-4-strong rounded-6 h-100">
-                            <!-- Card header -->
-                            <div class="p-4 border-bottom">
-                                <div class="row align-items-center">
-                                <div class="col-6 mb-4 mb-md-0">
-                                    <p class="text-muted mb-2">Users</p>
-                                    <p class="mb-0">
-                                    <span class="h5 me-2">14 567 </span>
-                                    <small class="text-success text-sm"
-                                            ><i class="fas fa-arrow-up fa-sm me-1"></i>13,48%</small
-                                        >
-                                    </p>
-                                </div>
-
-                                <div class="col-6 mb-4 mb-md-0 text-end">
-                                    <a
-                                    class="btn btn-outline-white btn-rounded"
-                                    href="#"
-                                    role="button"
-                                    >Details</a
-                                    >
-                                </div>
-                                </div>
-                            </div>
-                            <!-- Card header -->
-
-                            <!-- Card body -->
-                            <div class="p-4">
-                                <canvas id="line-chart" height="200px"></canvas>
-                            </div>
-                            <!-- Card body -->
-                            </div>
-                            <!-- Card -->
-                        </div>
-
-                        <div class="col-lg-6 mb-4 mb-lg-0">
-                            <!-- Card -->
-                            <div class="bg-glass shadow-4-strong rounded-6">
-                            <!-- Card header -->
-                            <div class="p-4 border-bottom">
-                                <div class="row align-items-center">
-                                <div class="col-6 mb-4 mb-md-0">
-                                    <p class="text-muted mb-2">Location</p>
-                                    <p class="mb-0">
-                                    <span class="h5 me-2">Top country: USA </span>
-                                    </p>
-                                </div>
-
-                                <div class="col-6 mb-4 mb-md-0 text-end">
-                                    <a
-                                    class="btn btn-outline-white btn-rounded"
-                                    href="#"
-                                    role="button"
-                                    >Details</a
-                                    >
-                                </div>
-                                </div>
-                            </div>
-                            <!-- Card header -->
-
-                            <!-- Card body -->
-                            <div class="p-4 pb-0">
-                                <div class="vector-map" id="my-map"></div>
-                            </div>
-                            <!-- Card body -->
-                            </div>
-                            <!-- Card -->
-                        </div>
-                        </div>
-                    </section>
-                    <!-- Section: Visualization -->
-                    </div>
-                    <!-- Main content -->
-                                
-                    <!-- Chart -->
-                        <script type="text/javascript">
-                        const ctxL = document.getElementById("line-chart").getContext("2d");
-                        const gradientFill = ctxL.createLinearGradient(0, 0, 0, 290);
-                        gradientFill.addColorStop(0, "hsla(218, 71%, 35%, 1)");
-                        gradientFill.addColorStop(1, "hsla(218, 41%, 35%, 0.2)");
-
-                        const dataLine = {
-                        type: "line",
-                        data: {
-                            labels: [
-                            "Monday",
-                            "Tuesday",
-                            "Wednesday",
-                            "Thursday",
-                            "Friday",
-                            "Saturday",
-                            "Sunday ",
-                            ],
-                            datasets: [
-                            {
-                                label: "Traffic",
-                                data: [2112, 2343, 2545, 3423, 2365, 1985, 987],
-                                backgroundColor: gradientFill,
-                            },
-                            ],
-                        },
-                        };
-
-                        const chartOptions = {
-                        options: {
-                            legend: {
-                            display: false,
-                            },
-                            scales: {
-                            yAxes: [
-                                {
-                                ticks: {
-                                    fontColor: "hsl(0, 0%, 80%)",
-                                },
-                                },
-                            ],
-                            xAxes: [
-                                {
-                                ticks: {
-                                    fontColor: "hsl(0, 0%, 80%)",
-                                },
-                                },
-                            ],
-                            },
-                        },
-                        };
-
-                        new mdb.Chart(
-                        document.getElementById("line-chart"),
-                        dataLine,
-                        chartOptions
-                        );
-                        </script>
-
-                        <!-- Map -->
-                        <script>
-                        const map = document.getElementById("my-map");
-
-                        new VectorMap(map, {
-                        readonly: true,
-                        stroke: "hsl(0, 0%, 100%)",
-                        fill: "hsl(219, 87%, 89%)",
-                        hoverFill: "hsl(219, 87%, 20%)",
-                        colorMap: [
-                            { fill: "hsl(218, 71%, 45%)", regions: ["US"] },
-                            { fill: "hsl(218, 71%, 65%)", regions: ["RU", "AU"] },
-                            {
-                            fill: "hsl(218, 71%, 75%)",
-                            regions: [
-                                "PL",
-                                "DE",
-                                "FR",
-                                "GB",
-                                "ES",
-                                "IT",
-                                "SE",
-                                "NO",
-                                "CZ",
-                                "NL",
-                                "BE",
-                                "CN",
-                                "IN",
-                            ],
-                            },
-                        ],
-                        });
-                        </script>
-
-                        <!-- Sidenav -->
-                        <script>
-                        //Initialize it with JS to make it instantly visible
-
-                        const slimInstance = new mdb.Sidenav(
-                            document.getElementById("sidenav-4")
-                        );
-                        slimInstance.show();
-
-                        document.getElementById("slim-toggler").addEventListener("click", () => {
-                        slimInstance.toggleSlim();
-                        });
-                        </script>
-                            """,
-                height=2000,)
-            
-            
-        if selected == "Sentiment Analysis":
-            components.html("""
-            <html>
-            <head>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-base.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-ui.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-exports.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-stock.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/js/anychart-data-adapter.min.js"></script>
-            <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-            <script src="https://cdn.anychart.com/releases/v8/themes/light_turquoise.min.js"></script>
-            <link href="https://cdn.anychart.com/releases/v8/css/anychart-ui.min.css" type="text/css" rel="stylesheet">
-            <link href="https://cdn.anychart.com/releases/v8/fonts/css/anychart-font.min.css" type="text/css" rel="stylesheet">
-            <style type="text/css">
-
-                html,
-                body,
-                .wrapper {
-                width: 100%;
-                height: 100%;
-                margin: 0;
-                padding: 0;
-                }
-
-                .wrapper {
-                position: relative;
-                }
-
-                .chart-column {
-                position: absolute;
-                top: 0
-                            
-                            """,height=700)
+      
             
         if selected== "Fundamental":
             components.html("""
@@ -1231,4 +657,134 @@ elif choice == "Login":
                     add_stocks_usertable(user_id,stock_id,shares,date)
                 if portfolio and seen:
                     st.success("Successfully Added Data:")
+        if selected=="Top Picks":
+            st.write("can you see me")
+            def render_html():
+                msft = yf.Ticker("MSFT")
+                df=msft.recommendations
+                df=df.to_html(buf=None, columns=None, col_space=None, header=True, index=True, na_rep='NaN', formatters=None, float_format=None, sparsify=None, index_names=True, justify=None, max_rows=None, max_cols=None, show_dimensions=False, decimal='.', bold_rows=True, classes=None, escape=True, notebook=False, border=None, table_id=None, render_links=False, encoding=None)
+                return df
+            components.html("""
+            <!DOCTYPE>
+            <html>
+            <head></head>
+            <body>"""+ render_html() +""""
+            </body></html>""",height=1000)
+        if selected =="News":
+            st.title="News"
+            def get_news():
+                msft= yf.Ticker("MSFT")
+                print(msft.news)
+                return msft.news
+            components.html("""
+             <!DOCTYPE>
+            <html>
+            <head>
+            <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+            <style>
+            #title{
+                border:1px solid black;
+            }
             
+            </style>
+            </head>
+            <body>
+            <div class="container"><div id="title"> </div>
+            </div>
+            <script>
+            let obj="""+ str(get_news()) + """;
+            let my_json=JSON.stringify(obj);
+            let parsed_objs=JSON.parse(my_json);
+            for (parsed_obj of parsed_objs){
+                document.getElementById('title').innerHTML +=   "<br><br><div>Title: <br><div>" + parsed_obj.title +"<br>Publisher: " + parsed_obj.publisher+"<hr>" ;
+                
+                /*+ "Full Time Employees: " + parsed_obj.fullTimeEmployees +"Business Summary: " + parsed_obj.longBusinessSummary*/
+               }
+            </script>    
+            </body>
+            <html>          
+                            
+                            """,height=1000)
+        if selected =="Trend Prediction":
+            from keras import *
+            from keras.layers import Dense,Dropout, LSTM
+            from keras.models import Sequential
+            import pandas_datareader as data
+            from matplotlib import *
+            import matplotlib.pyplot as plt
+            from sklearn.preprocessing import MinMaxScaler
+            start='2010-01-01'
+            end='2022-01-01'
+            df=data.DataReader('AAPL','yahoo',start,end)
+            df=df.reset_index()
+            df=df.drop(['Date','Adj Close'],axis=1)
+            
+            st.subheader('Closing Price vs Time Chart 100MA')
+            ma100=df.Close.rolling(100).mean()
+            fig=plt.figure(figsize=(12,6))
+            plt.plot(ma100,'r')
+            plt.plot(df.Close)
+            st.pyplot(fig)
+            
+            st.subheader('Closing Price vs Time Chart 200MA')
+            # ma100=df.Close.rolling(100).mean()
+            ma200=df.Close.rolling(200).mean()
+            fig3=plt.figure(figsize=(12,6))
+            # plt.plot(ma100,'r')
+            plt.plot(ma200,'r')
+            plt.plot(df.Close)
+            st.pyplot(fig3)
+            
+            data_training =pd.DataFrame(df['Close'][0:int(len(df)*0.75)])
+            data_testing =pd.DataFrame(df['Close'][0:int(len(df)*0.75):int(len(df))])
+            scaler=MinMaxScaler(feature_range=(0,1))
+            data_training_array=scaler.fit_transform(data_training)
+            x_train=[]
+            y_train=[]
+            for i in range(100,data_training_array.shape[0]):
+                x_train.append(data_training_array[i-100:i])
+                y_train.append(data_training_array[i,0])
+            x_train,y_train=np.array(x_train),np.array(y_train)
+            # Machine Learning Model
+            st.cache(allow_output_mutation=True)
+            def model():
+                model=Sequential()
+                model.add(LSTM(units= 50,activation='relu',return_sequences=True,input_shape=(x_train.shape[1],1)))
+                model.add(Dropout(0.2))
+                model.add(LSTM(units= 60,activation='relu',return_sequences=True))
+                model.add(Dropout(0.3))
+                
+                model.add(LSTM(units= 80,activation='relu',return_sequences=True))
+                model.add(Dropout(0.4))
+                
+                model.add(LSTM(units= 120,activation='relu'))
+                model.add(Dropout(0.5))
+                model.add(Dense(units=1))
+                
+                model.compile(optimizer="adam",loss="mean_squared_error")
+                model.fit(x_train,y_train,epochs=10)
+                
+            model()
+            past_100_days= data_training.tail(100)
+            final_df= past_100_days.append(data_testing,ignore_index=True)
+            input_data=scaler.fit_transform(final_df)   
+            x_test=[]
+            y_test=[]
+            for i in range(100,input_data.shape[0]):
+                x_test.append(input_data[i-100:i])
+                y_test.append(input_data[i,0])
+            x_test,y_test=np.array(x_test),np.array(y_test)   
+            y_predicted=model.predict(x_test)
+            scaler=scaler.scale_
+            scale_factor=1/scaler[0]
+            y_predicted=y_predicted* scale_factor
+            y_test=y_test*scale_factor
+            
+            st.subheader('Predictions vs Original')
+            fig2 =plt.figure(figsize=(12,6))
+            plt.plot(y_test,'b',label='Original Price ')
+            plt.plot(y_predicted,'r',label='Predicted Price ')
+            plt.xlabel('Time')
+            plt.xlabel('Price')
+            plt.legend()
+            st.pyplot(fig2)
