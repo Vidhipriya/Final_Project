@@ -20,9 +20,9 @@ from streamlit_chat import *
 # from transformers import BlenderbotForConditionalGeneration
 
 
-user_id = 0
+User_id = 0
 
-import datetime
+from datetime import *
 import streamlit as st
 import streamlit.components.v1 as components
 
@@ -33,12 +33,12 @@ from hydralit import HydraApp
 import hydralit_components as hc
 from streamlit_option_menu import option_menu
 import apps
-from datetime import date 
+# from Datetime import Date 
 import plotly.graph_objects as go
 import yfinance as yf 
 from dash import Dash, dcc, html, Input, Output, dash_table
-from dash.exceptions import PreventUpdate
-from time import sleep
+from dash.exceptions import *
+from time import *
 from random import randint, seed
 import pandas as pd
 import plotly.express as px
@@ -60,15 +60,15 @@ conn=sqlite3.connect('data.db')
 c=conn.cursor()
 st.cache(allow_output_mutation=True)
 def create_usertable():
-    c.execute('CREATE TABLE IF NOT EXISTS usertable(user_id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT, password TEXT);')
+    c.execute('CREATE TABLE IF NOT EXISTS usertable(User_id INTEGER PRIMARY KEY AUTOINCREMENT,username TEXT, password TEXT);')
 create_usertable()
 st.cache(allow_output_mutation=True)
 def create_stocks_usertable():
-    c.execute('CREATE TABLE IF NOT EXISTS stocks_usertable(user_id INTEGER, stock_id INTEGER, shares INTEGER, date DATE ,PRIMARY KEY (user_id, stock_id,date,shares),FOREIGN KEY (user_id) REFERENCES users(user_id) ON DELETE CASCADE,FOREIGN KEY (stock_id) REFERENCES stock(stock_id) ON DELETE CASCADE) ;')
+    c.execute('CREATE TABLE IF NOT EXISTS stocks_usertable(User_id INTEGER, Ticker TEXT, Shares INTEGER, Date DATE ,PRIMARY KEY (User_id, Ticker,Date,Shares),FOREIGN KEY (User_id) REFERENCES users(User_id) ON DELETE CASCADE,FOREIGN KEY (Ticker) REFERENCES stock(Ticker) ON DELETE CASCADE) ;')
 create_stocks_usertable()
 st.cache(allow_output_mutation=True)
 def create_table():
-    c.execute('CREATE TABLE IF NOT EXISTS stocktable(stock_id INTEGER PRIMARY KEY AUTOINCREMENT,ticker TEXT, type TEXT, price INTEGER, cost INTEGER);')
+    c.execute('CREATE TABLE IF NOT EXISTS stocktable(Ticker TEXT PRIMARY KEY ,Type TEXT, Price INTEGER, Cost INTEGER);')
 create_table()
 st.cache(allow_output_mutation=True)
 def add_userdata(username,password):
@@ -80,22 +80,24 @@ def delete_userdata():
     conn.commit()
 st.cache(allow_output_mutation=True)
 def login_user(username,password):
-    global user_id
+    global User_id
     c.execute('SELECT * FROM  usertable WHERE username=? AND password=?;',(username,password))
     data = c.fetchall()
     if(len(data) > 0):
-        user_id = data[0][0]
+        User_id = data[0][0]
     return data
 st.cache(allow_output_mutation=True)
 def view_all_stocks_user():
-    c.execute('SELECT * FROM  stocks_usertable WHERE  stocks_usertable.user_id=' + str(user_id) +';')
+    c.execute('SELECT * FROM  stocks_usertable JOIN stocktable ON stocks_usertable.Ticker = stocktable.Ticker WHERE stocks_usertable.User_id=' + str(User_id) +';')
     data = c.fetchall()
     return data
-
-
+def view_all_stocks():
+    c.execute('SELECT * FROM  stocktable ;')
+    data = c.fetchall()
+    return data
 st.cache(allow_output_mutation=True)
-def add_stocks_usertable(user_id,stock_id,shares,date):
-    c.execute('INSERT INTO stocks_usertable(user_id,stock_id,shares,date) VALUES(?,?,?,?);',(user_id,stock_id,shares,date))
+def add_stocks_usertable(User_id,Ticker,Shares,Date):
+    c.execute('INSERT INTO stocks_usertable(User_id,Ticker,Shares,Date) VALUES(?,?,?,?);',(User_id,Ticker,Shares,Date))
     conn.commit()
     
 st.cache(allow_output_mutation=True)
@@ -103,13 +105,13 @@ def delete_stocks_usertable(ticker):
     c.execute('DELETE FROM stocks_usertable WHERE ticker="{}"'.format(ticker))
     conn.commit()
 # def view_all_stocks_usertable():
-#     c.execute('SELECT * FROM  stocks_usertable JOIN stocktable ON stocks_usertable.stock_id = stocktable.stock_id JOIN usertable ON stocks_usertable.user_id=usertable.user_id WHERE stocks_usertable.user_id=usertable.user_id  ;')
+#     c.execute('SELECT * FROM  stocks_usertable JOIN stocktable ON stocks_usertable.Ticker = stocktable.Ticker WHERE stocks_usertable.User_id=usertable.User_id  ;')
 #     data = c.fetchall()
 #     return 
 
 st.cache(allow_output_mutation=True)
 def seen_by_person():
-    sql='SELECT * FROM stocks_usertable JOIN stocktable ON stocks_usertable.stock_id = stocktable.stock_id JOIN usertable ON stocks_usertable.user_id=usertable.user_id WHERE  stocks_usertable.user_id=' + str(user_id) +';'
+    sql='SELECT * FROM stocks_usertable JOIN stocktable ON stocks_usertable.Ticker = stocktable.Ticker JOIN usertable ON stocks_usertable.User_id=usertable.User_id WHERE  stocks_usertable.User_id=' + str(User_id) +';'
     c.execute(sql)
     data = c.fetchall()
     return data
@@ -125,28 +127,29 @@ global df
 global msft
 st.cache(allow_output_mutation=True)
 def add_data(ticker,type,price,cost):
-    c.execute('INSERT INTO stocktable(ticker,type,price,cost) VALUES(?,?,?,?);',(ticker,type,price,cost))
+    c.execute('INSERT INTO stocktable(Ticker,Type,Price,Cost) VALUES(?,?,?,?);',(ticker,type,price,cost))
     conn.commit()
     
 st.cache(allow_output_mutation=True)
-def delete_data(ticker):
-    c.execute('DELETE FROM stocktable WHERE ticker="{}"'.format(ticker))
+def delete_data(Ticker):
+    c.execute('DELETE FROM stocktable WHERE ticker="{}"'.format(Ticker))
     conn.commit()
     
 st.cache(allow_output_mutation=True)
 def view_all_data():
-    c.execute('SELECT * FROM  stocktable;')
+    c.execute('SELECT * FROM  stocktable JOIN stocks_usertable ON stocks_usertable.Ticker = stocktable.Ticker JOIN usertable ON stocks_usertable.User_id=usertable.User_id WHERE  stocks_usertable.User_id=' + str(User_id) +';')
+   
     data = c.fetchall()
     return data
 
 st.cache(allow_output_mutation=True)
 def view_all_ticker_names():
-    c.execute('SELECT DISTINCT ticker FROM stocktable;')
+    c.execute('SELECT DISTINCT Ticker FROM stocktable;')
     data = c.fetchall()
     return data
 st.cache(allow_output_mutation=True)
-def get_ticker(ticker):
-    c.execute('SELECT * FROM  stocktable WHERE ticker="{}"'.format(ticker))
+def get_ticker(Ticker):
+    c.execute('SELECT * FROM  stocktable WHERE ticker="{}"'.format(Ticker))
     data = c.fetchall()
     return data
 
@@ -237,7 +240,7 @@ elif choice == "Login" :
 
 
         with st.sidebar:
-            selected = option_menu("Home", ["My Stocks","Charts","News","Top Picks","Trend Prediction"],  
+            selected = option_menu("Home", ["My Stocks","Charts","News","Top Picks","ML Prediction"],  
                 icons=['house', 'gear', 'gear', 'gear', 'gear'], menu_icon="cast", default_index=1)
 
         if selected == "Charts":
@@ -248,6 +251,7 @@ elif choice == "Login" :
             def load_data(ticker):
                 data=yf.download(ticker)
                 data.reset_index(inplace =True)
+                print(data)
                 data['Date'] = data['Date'].apply(lambda x: str(x.date()))
                 data=data[['Date','Open','High','Low','Close']].to_numpy()
                 data = json.dumps(data,cls=NumpyArrayEncoder)
@@ -443,11 +447,7 @@ elif choice == "Login" :
                 df=a.get_candlestick_report()
                 st.dataframe(df)
                 print(df)
-                print(df)
-                print(df)
-                print(df)
-                print(df)
-                print(df)
+                
 
             with tab5.subheader("Stock Prediction"):
                pass
@@ -531,36 +531,58 @@ elif choice == "Login" :
 
             
             # st.markdown("<h1 style='text-align: center; color: White;'>My Portfolio</h1>", unsafe_allow_html=True)
-            menu=["Create","Add","Read","Update","Delete"]
+            menu=["Create","Add","Read","UpDate","Delete"]
             choice=st.selectbox("Menu",menu)
             st.expander("View All")
             col1,col2,col3=st.columns(3)
             
             
             with col2:
-                result = view_all_data()
+                result = view_all_stocks_user()
+              
             
             # st.write(result)
+            df = pd.DataFrame(result,columns=['User_id','Ticker','Shares','Date','Id','Type','Price','Cost'])
             
-            df = pd.DataFrame(result,columns=['stock_id','ticker','type','price','cost'])
-            st.dataframe(df)
-            ticker_df = df['ticker'].value_counts().to_frame()
+            ticker_df = df['Ticker'].value_counts().to_frame()
             # st.dataframe(ticker_df)
-            ticker_df = ticker_df.reset_index()
             # st.dataframe(ticker_df)
             col1, col2 = st.columns([4, 4])
-            
-            col2.subheader("Portfolio Linechart")
-            col2.line_chart(df)
+
+            with col2.subheader("Portfolio Linechart"):
+                col2.line_chart(df)
             with col1:
-                p1 = px.pie(ticker_df,names='index',values='ticker')
-                p1 = px.pie(ticker_df,names='index',values='ticker')
+                p1 = px.pie(ticker_df,names='Ticker',values='Ticker')
+                p1 = px.pie(ticker_df,names='Ticker',values='Ticker')
                 st.plotly_chart(p1,use_container_width=True)
-            if choice =="Create":
-                st.subheader("Add")
+            st.dataframe(df)
+            if choice=="Add":
+                tickered= view_all_stocks()
+                df = pd.DataFrame(tickered,columns=['User_id','Stock Type','Price','Cost'])
+                st.dataframe(df)
+                ticker_df = df['Ticker'].value_counts().to_frame()
+                # st.dataframe(ticker_df)
+                ticker_df = ticker_df.reset_index()
+                # st.dataframe(ticker_df)
+                
+                col1,col2= st.columns(2)
+                with col1:
+                    Ticker=st.text_input("Ticker")
+                
+                with col2:
+                    Shares=st.number_input("Shares")
+                    Date=st.date_input("Date")
+                
+                portfolio=st.button("Add To Portfolio")   
+                seen=seen_by_person()
+                if portfolio and seen:
+                    add_stocks_usertable(User_id,Ticker,Shares,Date)
+                    st.success("Successfully Added Data:{}".format(Ticker))
+            elif choice =="Create":
+                st.subheader("Add A Ticker")
                 col1,col2,col3= st.columns(3)
                 with col1:
-                    ticker=st.text_input("Ticker Symbol")
+                    ticker=st.text_input("Ticker")
                 with col2:
                     type=st.text_input("Type")
                 with col3:
@@ -570,16 +592,14 @@ elif choice == "Login" :
                 person=seen_by_person()
                 if complete:
                     add_data(ticker,type,price,cost)
-                if complete and person:
-                    st.success("Successfully Added Data:")
-                    
-            elif choice=="Update":
+                    st.success("Successfully Added Data:{}".format(ticker))
+            elif choice=="UpDate":
                 result = view_all_data()
                 # st.write(result)
                 df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
                 df['Shares'] = pd.to_numeric(df['Shares'])
-                print(df)
-                print(df.dtypes)
+                # print(df)
+                # print(df.dtypes)
                 st.dataframe(df)
                 # st.write(view_unique_data())
                 list_of_ticker=[i[0] for i in view_all_ticker_names()]
@@ -596,19 +616,19 @@ elif choice == "Login" :
                     col1,col2,col3= st.columns(3)
                     with col1:
                         new_ticker = st.text_input(label='ticker')
-                        new_shares = st.number_input(label='shares')
+                        new_Shares = st.number_input(label='Shares')
 
                     with col2:
                         new_type = st.text_input(label='type')
-                        new_date = st.date_input(label='date')
+                        new_Date = st.Date_input(label='Date')
                     with col3:
                         new_price=st.number_input(label='price')
                         new_cost=st.number_input(label='cost')
 
-                    if st.button("Update Task"):
-                        edit_ticker_data(new_ticker,new_shares,new_type,new_date,new_price,new_cost,ticker,type,price,cost)
-                        st.success("Updated ::{} ::To {}".format(ticker,new_ticker))
-                    with st.expander("View Updated Data"):
+                    if st.button("UpDate Task"):
+                        edit_ticker_data(new_ticker,new_Shares,new_type,new_Date,new_price,new_cost,ticker,type,price,cost)
+                        st.success("UpDated ::{} ::To {}".format(ticker,new_ticker))
+                    with st.expander("View UpDated Data"):
                         result = view_all_data()
                         # st.write(result)
                         clean_df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
@@ -617,6 +637,7 @@ elif choice == "Login" :
             elif choice == "Delete":
                 st.subheader("Delete")
                 with st.expander("View Data"):
+
                     result = view_all_data()
                     # st.write(result)
                     df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
@@ -629,34 +650,11 @@ elif choice == "Login" :
                 if delete_button:
                     delete_data(delete_by_ticker_name)
                     st.warning("Deleted: '{}'".format(delete_by_ticker_name))
-                with st.expander("Updated Data"):
+                with st.expander("UpDated Data"):
                     result = view_all_data()
                     # st.write(result)
                     clean_df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
                     st.dataframe(clean_df)
-            elif choice=="Add":
-                added=view_all_stocks_user()
-                df = pd.DataFrame(added,columns=['user_id','stock_id','shares','date'])
-                st.dataframe(df)
-                ticker_df = df['shares'].value_counts().to_frame()
-                # st.dataframe(ticker_df)
-                ticker_df = ticker_df.reset_index()
-                # st.dataframe(ticker_df)
-                
-                col1,col2= st.columns(2)
-                with col1:
-                    stock_id=st.number_input("stock_id")
-                
-                with col2:
-                    shares=st.number_input("shares")
-                    date=st.date_input("date")
-                
-                portfolio=st.button("Add To Portfolio")   
-                seen=seen_by_person()
-                if portfolio:
-                    add_stocks_usertable(user_id,stock_id,shares,date)
-                if portfolio and seen:
-                    st.success("Successfully Added Data:")
         if selected=="Top Picks":
             st.write("can you see me")
             def render_html():
@@ -674,7 +672,6 @@ elif choice == "Login" :
             st.title="News"
             def get_news():
                 msft= yf.Ticker("MSFT")
-                print(msft.news)
                 return msft.news
             components.html("""
              <!DOCTYPE>
