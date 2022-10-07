@@ -50,8 +50,13 @@ from streamlit_authenticator import Authenticate
 from st_on_hover_tabs import on_hover_tabs
 from yaml import SafeLoader
 import yaml
+from streamlit_lottie import *
 # Main App
-st.set_page_config(page_title="Fintero", page_icon=":stock_chart:", layout="wide" ,)
+from PIL import Image
+image = Image.open('Fintero_Logo.png')
+
+
+st.set_page_config(page_title="Fintero", page_icon="📊", layout="wide" ,)
 st.write('<style>div.block-container{padding-top:2rem;}</style>', unsafe_allow_html=True) 
 #  Login Page
 import sqlite3
@@ -91,12 +96,21 @@ def view_all_stocks_user():
     c.execute('SELECT * FROM  stocks_usertable JOIN stocktable ON stocks_usertable.Ticker = stocktable.Ticker WHERE stocks_usertable.User_id=' + str(User_id) +';')
     data = c.fetchall()
     return data
+st.cache(allow_output_mutation=True)
+def view_all_specific_stocks_user():
+    c.execute('SELECT * FROM  stocks_usertable JOIN stocktable ON stocks_usertable.Ticker = stocktable.Ticker WHERE stocks_usertable.User_id=' + str(User_id) +';')
+    data = c.fetchall()
+    return data
 def view_all_stocks():
     c.execute('SELECT * FROM  stocktable ;')
     data = c.fetchall()
     return data
 st.cache(allow_output_mutation=True)
 def add_stocks_usertable(User_id,Ticker,Shares,Date):
+    c.execute('INSERT INTO stocks_usertable(User_id,Ticker,Shares,Date) VALUES(?,?,?,?);',(User_id,Ticker,Shares,Date))
+    conn.commit()
+st.cache(allow_output_mutation=True)
+def add_data(User_id,Ticker,Shares,Date):
     c.execute('INSERT INTO stocks_usertable(User_id,Ticker,Shares,Date) VALUES(?,?,?,?);',(User_id,Ticker,Shares,Date))
     conn.commit()
     
@@ -141,6 +155,11 @@ def view_all_data():
    
     data = c.fetchall()
     return data
+st.cache(allow_output_mutation=True)
+def get_chart():
+    c.execute('SELECT * FROM  stocks_usertable GROUP BY Shares HAVING SUM (Shares);')
+    data = c.fetchall()
+    return data
 
 st.cache(allow_output_mutation=True)
 def view_all_ticker_names():
@@ -166,8 +185,11 @@ def edit_ticker_data(new_ticker,new_type,new_price,new_cost,ticker,type,price,co
 text2=st.empty()
 text4=st.empty()
 with text2.container():
-    menu=["Login","Register"]
-    choice=st.selectbox("Choose One",menu)
+    selected2 = option_menu(None, ["Home", "Login", "Register"], 
+    icons=['house', 'people', "person"], 
+    menu_icon="cast", default_index=0, orientation="horizontal")
+    # menu=["Login","Register"]
+    # choice=st.selectbox("Choose One",menu)
 
 
 # global msft
@@ -175,7 +197,194 @@ with text2.container():
 #                 c.execute('DROP TABLE IF EXISTS usertable;')
 #                 conn.commit()
 # delete_usertable()
-if choice == "Register" :
+if selected2 == "Home":
+    def local_css(file_name):
+        with open(file_name) as f:
+            st.markdown(f"<style>{f.read()}</style>", unsafe_allow_html=True)
+
+
+    local_css("style.css")
+    components.html("""
+        <!doctype>
+        <html>
+        <head>
+        <!-- CSS only -->
+        <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+         <style>
+            .horizontal-timeline .items {
+            border-top: 3px solid #e9ecef;
+            }
+
+            .horizontal-timeline .items .items-list {
+            display: block;
+            position: relative;
+            text-align: center;
+            padding-top: 70px;
+            margin-right: 0;
+            }
+
+            .horizontal-timeline .items .items-list:before {
+            content: "";
+            position: absolute;
+            height: 36px;
+            border-right: 2px dashed #dee2e6;
+            top: 0;
+            }
+
+            .horizontal-timeline .items .items-list .event-date {
+            position: absolute;
+            top: 36px;
+            left: 0;
+            right: 0;
+            width: 75px;
+            margin: 0 auto;
+            font-size: 0.9rem;
+            padding-top: 8px;
+            }
+
+            @media (min-width: 1140px) {
+            .horizontal-timeline .items .items-list {
+                display: inline-block;
+                width: 24%;
+                padding-top: 45px;
+            }
+
+            .horizontal-timeline .items .items-list .event-date {
+                top: -40px;
+            }
+            }
+      
+         </style>
+        </head>
+        <body>
+        <div class="container my-5">
+        <div class="row gx-lg-5 pt-5">
+            <div class="col-md-5 mb-9 mb-md-0 d-flex align-items-center">
+            <div>
+                <h1 >Fintero</h1>
+          
+                <p class="lead fw-normal text-muted">
+                Invest Safely in Stocks with Fintero, we offer Stock Price Prediction with Machine Learning as well as Fundamental Analysis and Technical Analysis Tools.
+                Try it out now!  
+                </p>
+
+                <button type="button" class="btn btn-lg mt-4 me-2" style="background-color:#4B64FF;color:white;">
+                Get Started
+                </button>
+                <button
+                        type="button"
+                        class="btn btn-link text-secondary btn-lg mt-4"
+                        data-ripple-color="secondary"
+                        >
+                Read more
+                </button>
+            </div>
+            </div>
+
+            <div
+                class="
+                        col-md-7
+                        mb-4 mb-md-0
+                        position-relative
+                        d-flex
+                        align-items-center
+                        "
+                >
+            <img
+                src="https://static.tildacdn.com/tild3661-6562-4261-b262-623231323561/snip.png"
+                class="w-100"
+                id="featured-image"
+                alt=""
+                />
+
+            <div
+                id="shape-1"
+                class="
+                        rounded-circle
+                        position-absolute
+                        opacity-70
+                        scale-up-center
+                        d-none d-md-block
+                        "
+                ></div>
+            <div
+                id="shape-2"
+                class="
+                        rounded-circle
+                        position-absolute
+                        opacity-70
+                        scale-up-center
+                        fade-delay-2000
+                        d-none d-md-block
+                        "
+                ></div>
+            <div
+                id="shape-3"
+                class="
+                        rounded-circle
+                        position-absolute
+                        opacity-70
+                        scale-up-center
+                        fade-delay-4000
+                        d-none d-md-block
+                        "
+                ></div>
+        </div>
+        </div>
+        </div>
+        <br>
+        <br>
+        <br>
+        <div class="container-fluid py-5">
+
+        <div class="row">
+            <div class="col-lg-12">
+
+            <div class="horizontal-timeline">
+
+                <ul class="list-inline items">
+                <li class="list-inline-item items-list">
+                    <div class="px-4">
+                    <div class="event-date badge " style="background-color:#4B64FF;">Home</div>
+                    <h5 class="pt-2">You Are Here</h5>
+                   
+                    </div>
+                </li>
+                <li class="list-inline-item items-list">
+                    <div class="px-4">
+                    <div class="event-date badge " style="background-color:#4B64FF;">Register</div>
+                    <h5 class="pt-2">Create a New Account</h5>
+                   
+                    
+                    </div>
+                </li>
+                <li class="list-inline-item items-list">
+                    <div class="px-4">
+                    <div class="event-date badge " style="background-color:#4B64FF;">Login</div>
+                    <h5 class="pt-2">Become a Fintero Member</h5>
+                    
+                   
+                    </div>
+                </li>
+                <li class="list-inline-item items-list">
+                    <div class="px-4">
+                    <div class="event-date badge " style="background-color:#4B64FF;">Enjoy</div>
+                    <h5 class="pt-2">Feel At Home With Our Services</h5>
+                    
+                    </div>
+                </li>
+                </ul>
+
+            </div>
+
+            </div>
+        </div>
+
+        </div>  
+
+        </body></html>""",height=4000)
+
+elif selected2 == "Register" :
     
     st.session_state.new_user=st.text_input("Set Your Username")
     st.session_state.new_password= st.text_input("Set Your Password",type='password')
@@ -185,7 +394,7 @@ if choice == "Register" :
         st.success("Welcome Onboard {}".format(st.session_state.new_user))
         st.info("Go to login Menu to login")
    
-elif choice == "Login" :
+elif selected2 == "Login" :
     with text4.container():
         st.session_state.username= st.text_input("Username")
         st.session_state.password= st.text_input("password",type='password')
@@ -529,55 +738,63 @@ elif choice == "Login" :
         if selected == "My Stocks":
             
 
-            
             # st.markdown("<h1 style='text-align: center; color: White;'>My Portfolio</h1>", unsafe_allow_html=True)
-            menu=["Create","Add","Read","UpDate","Delete"]
+            menu=["Add","Read","Update","Delete"]
             choice=st.selectbox("Menu",menu)
-            st.expander("View All")
-            col1,col2,col3=st.columns(3)
-            
-            
-            with col2:
-                result = view_all_stocks_user()
-              
-            
-            # st.write(result)
-            df = pd.DataFrame(result,columns=['User_id','Ticker','Shares','Date','Id','Type','Price','Cost'])
-            
-            ticker_df = df['Ticker'].value_counts().to_frame()
-            # st.dataframe(ticker_df)
-            # st.dataframe(ticker_df)
-            col1, col2 = st.columns([4, 4])
+            result = view_all_stocks_user()
+            get_chart_data=get_chart() and view_all_data()
+            # print(get_chart_data)
+            # st.dataframe(result)
+            # # st.write(result)
+            df = pd.DataFrame(get_chart_data,columns=['Ticker','Type','Shares','Cost','User_id','Ticker2','Price','User_id2','Username','Typey','Pricey'])
+            col1, col2  = st.columns([3, 3])
+            col3, col4 = st.columns([3, 3])
+    
 
-            with col2.subheader("Portfolio Linechart"):
-                col2.line_chart(df)
             with col1:
-                p1 = px.pie(ticker_df,names='Ticker',values='Ticker')
-                p1 = px.pie(ticker_df,names='Ticker',values='Ticker')
-                st.plotly_chart(p1,use_container_width=True)
-            st.dataframe(df)
+                col1.subheader("Pie Chart")
+                fig = px.pie(df, values='Shares', names='Ticker', title='')
+                st.write(fig)
+                # ticker_df = df['Shares'].value_counts().to_frame()
+                # print(ticker_df)
+                # p1 = px.pie(ticker_df,names='Shares',values='Shares')
+                # st.plotly_chart(p1,use_container_width=True)
+            with col2.subheader("Line chart"):
+                col2.line_chart(df,x='Ticker',y='Price')
+            with col3.subheader("Area Chart"):
+                col3.area_chart(df,x='Ticker',y='Price')
+            with col4.subheader("Bar Chart"):
+                col4.bar_chart(df,x='Ticker',y='Price')
             if choice=="Add":
                 tickered= view_all_stocks()
-                df = pd.DataFrame(tickered,columns=['User_id','Stock Type','Price','Cost'])
+                df = pd.DataFrame(tickered,columns=['Ticker','Stock Type','Price','Cost'])
                 st.dataframe(df)
                 ticker_df = df['Ticker'].value_counts().to_frame()
                 # st.dataframe(ticker_df)
                 ticker_df = ticker_df.reset_index()
                 # st.dataframe(ticker_df)
-                
+                df2=view_all_specific_stocks_user()
+                df2= pd.DataFrame(df2,columns=['User_id','Ticker','Shares','Date','Ticker_Id','Type','Price','Cost'])
+                st.dataframe(df2)
+                    
                 col1,col2= st.columns(2)
+
+                unique_list = [i[0] for i in view_all_ticker_names()]
                 with col1:
-                    Ticker=st.text_input("Ticker")
-                
+
+                    get_by_ticker_name =  st.selectbox("Select Ticker",unique_list)
+                    print(get_by_ticker_name)
+                    print(unique_list)
                 with col2:
                     Shares=st.number_input("Shares")
-                    Date=st.date_input("Date")
                 
+                    Date=st.date_input("Date")
+                    
                 portfolio=st.button("Add To Portfolio")   
                 seen=seen_by_person()
                 if portfolio and seen:
-                    add_stocks_usertable(User_id,Ticker,Shares,Date)
-                    st.success("Successfully Added Data:{}".format(Ticker))
+                    add_stocks_usertable(User_id,get_by_ticker_name,Shares,Date)
+                    st.success("Successfully Added Data:{}".format(get_by_ticker_name))
             elif choice =="Create":
                 st.subheader("Add A Ticker")
                 col1,col2,col3= st.columns(3)
@@ -593,7 +810,8 @@ elif choice == "Login" :
                 if complete:
                     add_data(ticker,type,price,cost)
                     st.success("Successfully Added Data:{}".format(ticker))
-            elif choice=="UpDate":
+
+            elif choice=="Update":
                 result = view_all_data()
                 # st.write(result)
                 df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
@@ -640,7 +858,7 @@ elif choice == "Login" :
 
                     result = view_all_data()
                     # st.write(result)
-                    df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
+                    df = pd.DataFrame(result,columns=['Ticker','Type','Shares','Cost','User_id','Ticker2','Price','User_id2','Username','Typey','Pricey'])
                     df["Shares"] = pd.to_numeric(df["Shares"])
                     st.dataframe(df)
 
@@ -653,21 +871,55 @@ elif choice == "Login" :
                 with st.expander("UpDated Data"):
                     result = view_all_data()
                     # st.write(result)
-                    clean_df = pd.DataFrame(result,columns=['Ticker','Type','Price','Cost'])
+                    clean_df = pd.DataFrame(result,columns=['Ticker','Type','Shares','Cost','User_id','Ticker2','Price','User_id2','Username','Typey','Pricey'])
                     st.dataframe(clean_df)
         if selected=="Top Picks":
-            st.write("can you see me")
-            def render_html():
-                msft = yf.Ticker("MSFT")
-                df=msft.recommendations
-                df=df.to_html(buf=None, columns=None, col_space=None, header=True, index=True, na_rep='NaN', formatters=None, float_format=None, sparsify=None, index_names=True, justify=None, max_rows=None, max_cols=None, show_dimensions=False, decimal='.', bold_rows=True, classes=None, escape=True, notebook=False, border=None, table_id=None, render_links=False, encoding=None)
-                return df
-            components.html("""
-            <!DOCTYPE>
-            <html>
-            <head></head>
-            <body>"""+ render_html() +""""
-            </body></html>""",height=1000)
+            import plotly.figure_factory as ff
+            msft = yf.Ticker("MSFT")
+            def get_data_frame():
+                return msft.actions
+            data_frame=get_data_frame()
+              
+            
+            # st.write(result)
+            df = pd.DataFrame(data_frame,columns=['Dividends','Stock Splits'])
+            y=[['Date']]
+            columns=[['Dividends','Stock Splits']]
+            # ticker_df = df['Ticker'].value_counts().to_frame()
+            # st.dataframe(ticker_df)
+            # st.dataframe(ticker_df)
+            chart1, chart2 = st.columns([4, 4])
+
+            with chart1.subheader("Portfolio Linechart"):
+                chart1.line_chart(df)
+            with chart2:
+                chart2.bar_chart(df)
+            
+            chart3, chart4 = st.columns([4, 4])
+            with chart4:
+                chart4.area_chart(df)
+
+            with chart3.subheader("Portfolio Linechart"):
+                df=msft.actions
+                animals=['Dividends' ]
+                fig = px.bar(df, x=animals, y='Stock Splits')
+                st.pyplot(fig)
+
+           
+                        
+            
+            # st.write("can you see me")
+            # def render_html():
+            #     msft = yf.Ticker("MSFT")
+            #     df=msft.recommendations
+            #     df=df.to_html(buf=None, columns=None, col_space=None, header=True, index=True, na_rep='NaN', formatters=None, float_format=None, sparsify=None, index_names=True, justify=None, max_rows=None, max_cols=None, show_dimensions=False, decimal='.', bold_rows=True, classes=None, escape=True, notebook=False, border=None, table_id=None, render_links=False, encoding=None)
+            #     return df
+            # components.html("""
+            # <!DOCTYPE>
+            # <html>
+            # <head></head>
+            # <body>"""+ render_html() +""""
+            # </body></html>""",height=1000)
         if selected =="News":
             st.title="News"
             def get_news():
@@ -743,25 +995,7 @@ elif choice == "Login" :
                 y_train.append(data_training_array[i,0])
             x_train,y_train=np.array(x_train),np.array(y_train)
             # Machine Learning Model
-            st.cache(allow_output_mutation=True)
-            def model():
-                model=Sequential()
-                model.add(LSTM(units= 50,activation='relu',return_sequences=True,input_shape=(x_train.shape[1],1)))
-                model.add(Dropout(0.2))
-                model.add(LSTM(units= 60,activation='relu',return_sequences=True))
-                model.add(Dropout(0.3))
-                
-                model.add(LSTM(units= 80,activation='relu',return_sequences=True))
-                model.add(Dropout(0.4))
-                
-                model.add(LSTM(units= 120,activation='relu'))
-                model.add(Dropout(0.5))
-                model.add(Dense(units=1))
-                
-                model.compile(optimizer="adam",loss="mean_squared_error")
-                model.fit(x_train,y_train,epochs=10)
-                
-            model()
+            model=model('keras_stock_price_models')
             past_100_days= data_training.tail(100)
             final_df= past_100_days.append(data_testing,ignore_index=True)
             input_data=scaler.fit_transform(final_df)   
