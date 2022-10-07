@@ -449,7 +449,7 @@ elif selected2 == "Login" :
 
 
         with st.sidebar:
-            selected = option_menu("Home", ["My Stocks","Charts","News","Top Picks","ML Prediction"],  
+            selected = option_menu("Home", ["My Stocks","Charts","News","Top Picks","Fundamental Analysis","ML Prediction"],  
                 icons=['house', 'gear', 'gear', 'gear', 'gear'], menu_icon="cast", default_index=1)
 
         if selected == "Charts":
@@ -605,7 +605,6 @@ elif selected2 == "Login" :
                 <html>
                 <head></head>
                 <body>
-                <h1>Hello</h1>
                 <div id="info"></div>
                 <script>
                 
@@ -613,7 +612,7 @@ elif selected2 == "Login" :
                 let my_json=JSON.stringify(obj);
                 let parsed_obj=JSON.parse(my_json);
                 
-                document.getElementById("info").innerHTML +=  "Converting JSON to HTML <br><br>" + "Sector:" + parsed_obj.sector  + "Full Time Employees: " +parsed_obj.fullTimeEmployees +"Business Summary: " + parsed_obj.longBusinessSummary +"Country: " + parsed_obj.country;
+                document.getElementById("info").innerHTML +=  "Sector:" + parsed_obj.sector  + "Full Time Employees: " +parsed_obj.fullTimeEmployees +"Business Summary: " + parsed_obj.longBusinessSummary +"Country: " + parsed_obj.country;
             
                 </script>    
                 </body>
@@ -873,40 +872,72 @@ elif selected2 == "Login" :
                     # st.write(result)
                     clean_df = pd.DataFrame(result,columns=['Ticker','Type','Shares','Cost','User_id','Ticker2','Price','User_id2','Username','Typey','Pricey'])
                     st.dataframe(clean_df)
-        if selected=="Top Picks":
+        if selected=="Fundamental Analysis":
             import plotly.figure_factory as ff
             msft = yf.Ticker("MSFT")
-            def get_data_frame():
-                return msft.actions
-            data_frame=get_data_frame()
-              
-            
+            # chosen_ticker=yf.Ticker(str(load_data(selected_stocks)))
+            # stocks=["AAPL","GOOG","MSFT","COST","AMD","FDX","SAVA","CANO"]
+            # selected_stocks=st.selectbox("Select A Ticker",stocks)
+            # st.cache(allow_output_mutation=True)
+            # def load_data(ticker):
+            #     data=yf.download(ticker)
+            #     return data 
             # st.write(result)
-            df = pd.DataFrame(data_frame,columns=['Dividends','Stock Splits'])
-            y=[['Date']]
-            columns=[['Dividends','Stock Splits']]
             # ticker_df = df['Ticker'].value_counts().to_frame()
             # st.dataframe(ticker_df)
             # st.dataframe(ticker_df)
-            chart1, chart2 = st.columns([4, 4])
+            chart1, chart6,chart5 = st.columns([4, 4,4])
 
-            with chart1.subheader("Portfolio Linechart"):
-                chart1.line_chart(df)
-            with chart2:
-                chart2.bar_chart(df)
-            
-            chart3, chart4 = st.columns([4, 4])
-            with chart4:
-                chart4.area_chart(df)
-
-            with chart3.subheader("Portfolio Linechart"):
-                df=msft.actions
-                animals=['Dividends' ]
-                fig = px.bar(df, x=animals, y='Stock Splits')
-                st.pyplot(fig)
-
-           
+            with chart1.subheader("Company Earnings"):
+                st.cache(allow_output_mutation=True)
+                def earnings():
+                    data_frame=  msft.earnings
+                    df = pd.DataFrame(data_frame,columns=['Revenue','Earnings'])
+                    # y=[['Year']]
+                    # columns=[['Dividends','Stock Splits']]
+                    chart1.bar_chart(df)
+                earnings()
+            with chart5.subheader("Major Holders"):
+                st.cache(allow_output_mutation=True)
+                def holders():
+                    data_frame=  msft.major_holders
+                    df = pd.DataFrame(data_frame)
+                    # chart4.line_chart(df)
+                    chart5.area_chart(df)
+                holders()
+            with chart6.subheader("Calendar"):
+                st.cache(allow_output_mutation=True)
+                def calendar():
                         
+                    data_frame=  msft.calendar
+                    df = pd.DataFrame(data_frame)
+                    chart6.bar_chart(df)
+                calendar()
+            
+            chart2,chart3, chart4 = st.columns([4, 4,4])
+            with chart2.subheader("Institutional Holders"):
+                data_frame=  msft.institutional_holders
+                df = pd.DataFrame(data_frame)
+                
+                columns=[['Dividends','Stock Splits']]
+                # chart2.bar_chart(df,x='Holder',y='Shares')
+             
+            with chart3.subheader("Stock Financials"):
+                data_frame=  msft.financials
+                df = pd.DataFrame(data_frame,columns=['2022-06-30','2020-06-30','2021-06-30','2019-06-30'])
+                # chart4.line_chart(df)
+                chart3.bar_chart(df)
+            with chart4.subheader("Stock Actions"):
+
+                data_frame=  msft.actions
+                df = pd.DataFrame(data_frame)
+               
+                
+                chart4.line_chart(df)
+                
+                
+     
+      
             
             # st.write("can you see me")
             # def render_html():
@@ -920,26 +951,73 @@ elif selected2 == "Login" :
             # <head></head>
             # <body>"""+ render_html() +""""
             # </body></html>""",height=1000)
+        if selected=="Top Picks":
+            def get_recommendations():
+                msft= yf.Ticker("MSFT")
+                return msft.recommendations
+            data_frame=get_recommendations()
+            df = pd.DataFrame(data_frame)
+            df.loc[df['To Grade'] == 'Buy', 'Ask/Bid'] = '📈'  
+            df.loc[df['To Grade'] == 'Long-Term Buy', 'Ask/Bid'] = '⏱️📈'  
+            df.loc[df['To Grade'] == 'Neutral', 'Ask/Bid'] = '✖️'  
+            df.loc[df['To Grade'] == 'Sell', 'Ask/Bid'] = '📉'  
+            df.drop('Action', inplace=True, axis=1)
+            df.drop('From Grade', inplace=True, axis=1)
+            st.dataframe(df,width=800, height=1000)
         if selected =="News":
             st.title="News"
             def get_news():
                 msft= yf.Ticker("MSFT")
                 return msft.news
+              
             components.html("""
-             <!DOCTYPE>
+            <!DOCTYPE>
             <html>
             <head>
             <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-Zenh87qX5JnK2Jl0vWa8Ck2rdkQ2Bzep5IDxbcnCeuOxjzrPF/et3URy9Bv1WTRi" crossorigin="anonymous">
+            <link href="https://fonts.googleapis.com/css2?family=Libre+Franklin:wght@500&display=swap" rel="stylesheet">
             <style>
-            #title{
-                border:1px solid black;
+            body{
+                font-family: 'Libre Franklin', sans-serif;s
             }
-            
-            </style>
+            .card{
+                height:700px;
+                box-shadow: 20px 21px 55px 3px rgba(99,96,122,1);
+            }
+            .intro{
+                 height:1000px;   
+            }
+            .gradient-custom {
+            background: radial-gradient(50% 123.47% at 50% 50%, #00FF94 0%, #720059 100%), linear-gradient(121.28deg, #669600 0%, #FF0000 100%), linear-gradient(360deg, #0029FF 0%, #8FFF00 100%), radial-gradient(100% 164.72% at 100% 100%, #6100FF 0%, #00FF57 100%), radial-gradient(100% 148.07% at 0% 0%, #FFF500 0%, #51D500 100%);
+            background-blend-mode: screen, color-dodge, overlay, difference, normal;
+            }
+
+
+            .mask-custom {
+            backdrop-filter: blur(15px);
+            background-color: rgba(255,255,255,.2);
+            border-radius: 3em;
+            border: 2px solid rgba(255,255,255,.1);
+            background-clip: padding-box;
+            box-shadow: 10px 10px 10px rgba(46, 54, 68, 0.03);
+            }   </style>
             </head>
             <body>
-            <div class="container"><div id="title"> </div>
-            </div>
+            <section class="intro">
+            <div class="mask d-flex align-items-center h-100 gradient-custom">
+                <div class="container">
+                <div class="row justify-content-center">
+                    <div class="col-12 col-xl-10">
+                            <div class="card-body">
+                            <div style=" font-size:18px;"class="mask-custom py-5 px-4 text-dark" data-mdb-toggle="animation" data-mdb-animation-start="onLoad" data-mdb-animation="fade-in" data-mdb-animation-duration="1000" data-mdb-animation-delay="300" id="title"> </div>
+                           
+                        </div>
+                    </div>
+                    </div>
+                    </div>
+                </div>
+                </div>
+            </section>
             <script>
             let obj="""+ str(get_news()) + """;
             let my_json=JSON.stringify(obj);
@@ -953,7 +1031,7 @@ elif selected2 == "Login" :
             </body>
             <html>          
                             
-                            """,height=1000)
+                            """,height=4000)
         if selected =="Trend Prediction":
             from keras import *
             from keras.layers import Dense,Dropout, LSTM
