@@ -408,6 +408,7 @@ elif selected2 == "Login" :
         text4.empty()
         text2.empty()
         st.sidebar.write(f'{st.session_state.username}')
+        st.cache(allow_output_mutation=True)
         def get_data(selected_stocks):
             return [
                 ['2015-12-25', 512.53, 514.88, 505.69, 507.34],
@@ -429,6 +430,7 @@ elif selected2 == "Login" :
                 ['2016-01-10', 508.53, 516.13, 505.66, 510.42]
                 ]
         class NumpyArrayEncoder(JSONEncoder):
+            st.cache(allow_output_mutation=True)
             def default(self, obj):
                 if isinstance(obj, numpy.ndarray):
                     return obj.tolist()
@@ -453,10 +455,10 @@ elif selected2 == "Login" :
                 icons=['house', 'gear', 'gear', 'gear', 'gear'], menu_icon="cast", default_index=1)
 
         if selected == "Charts":
-            stocks=["AAPL","GOOG","MSFT","COST","AMD","FDX","SAVA","CANO"]
-            selected_stocks=st.selectbox("Select A Ticker",stocks)
+            st.session_state.stocks=["AAPL","GOOG","MSFT","COST","AMD","FDX","SAVA","CANO"]
+            selected_stocks=st.selectbox("Select A Ticker", st.session_state.stocks)
             tab1, tab2,tab3,tab4,tab5 = st.tabs(["📈 Charts", "🗃 Stock Info","📰 Fundamentals","🔍Pattern Finder","🔮 Prediction"])
-            @st.cache
+            st.cache(allow_output_mutation=True)
             def load_data(ticker):
                 data=yf.download(ticker)
                 data.reset_index(inplace =True)
@@ -594,9 +596,10 @@ elif selected2 == "Login" :
                     </html>
                 
                     """,
-                    height=700,
+                    height=550,
                     )
             with tab2.subheader("Stock Info"):
+                st
                 def get_info():
                     msft= yf.Ticker("MSFT")
                     return msft.info
@@ -920,7 +923,7 @@ elif selected2 == "Login" :
                 df = pd.DataFrame(data_frame)
                 
                 columns=[['Dividends','Stock Splits']]
-                # chart2.bar_chart(df,x='Holder',y='Shares')
+                chart2.bar_chart(df,x='Holder',y='Shares')
              
             with chart3.subheader("Stock Financials"):
                 data_frame=  msft.financials
@@ -965,7 +968,7 @@ elif selected2 == "Login" :
             df.drop('From Grade', inplace=True, axis=1)
             st.dataframe(df,width=800, height=1000)
         if selected =="News":
-            st.title="News"
+            st.title="Latest news"
             def get_news():
                 msft= yf.Ticker("MSFT")
                 return msft.news
@@ -985,7 +988,7 @@ elif selected2 == "Login" :
                 box-shadow: 20px 21px 55px 3px rgba(99,96,122,1);
             }
             .intro{
-                 height:1000px;   
+                 height:1500px;   
             }
             .gradient-custom {
             background: radial-gradient(50% 123.47% at 50% 50%, #00FF94 0%, #720059 100%), linear-gradient(121.28deg, #669600 0%, #FF0000 100%), linear-gradient(360deg, #0029FF 0%, #8FFF00 100%), radial-gradient(100% 164.72% at 100% 100%, #6100FF 0%, #00FF57 100%), radial-gradient(100% 148.07% at 0% 0%, #FFF500 0%, #51D500 100%);
@@ -1032,7 +1035,7 @@ elif selected2 == "Login" :
             <html>          
                             
                             """,height=4000)
-        if selected =="Trend Prediction":
+        if selected =="ML Prediction":
             from keras import *
             from keras.layers import Dense,Dropout, LSTM
             from keras.models import Sequential
@@ -1045,55 +1048,57 @@ elif selected2 == "Login" :
             df=data.DataReader('AAPL','yahoo',start,end)
             df=df.reset_index()
             df=df.drop(['Date','Adj Close'],axis=1)
+            ml1,ml2=st.columns([4, 4])
+            with ml1:
+                st.subheader('Closing Price vs Time Chart 100MA')
+                ma100=df.Close.rolling(100).mean()
+                fig=plt.figure(figsize=(12,6))
+                plt.plot(ma100,'r')
+                plt.plot(df.Close)
+                st.pyplot(fig)
+                
+            with ml2:
+                st.subheader('Closing Price vs Time Chart 200MA')
+                ma100=df.Close.rolling(100).mean()
+                ma200=df.Close.rolling(200).mean()
+                fig3=plt.figure(figsize=(12,6))
+                plt.plot(ma100,'r')
+                plt.plot(ma200,'r')
+                plt.plot(df.Close)
+                st.pyplot(fig3)
             
-            st.subheader('Closing Price vs Time Chart 100MA')
-            ma100=df.Close.rolling(100).mean()
-            fig=plt.figure(figsize=(12,6))
-            plt.plot(ma100,'r')
-            plt.plot(df.Close)
-            st.pyplot(fig)
+            # data_training =pd.DataFrame(df['Close'][0:int(len(df)*0.75)])
+            # data_testing =pd.DataFrame(df['Close'][int(len(df)*0.75):int(len(df))])
+            # scaler=MinMaxScaler(feature_range=(0,1))
+            # data_training_array=scaler.fit_transform(data_training)
+            # x_train=[]
+            # y_train=[]
+            # for i in range(100,data_training_array.shape[0]):
+            #     x_train.append(data_training_array[i-100:i])
+            #     y_train.append(data_training_array[i,0])
+            # x_train,y_train=np.array(x_train),np.array(y_train)
+            # model=load_model('keras_stock_price_models.h5')
+            # # Machine Learning Model
+            # past_100_days= data_training.tail(100)
+            # final_df= past_100_days.append(data_testing,ignore_index=True)
+            # input_data=scaler.fit_transform(final_df)   
+            # x_test=[]
+            # y_test=[]
+            # for i in range(100,input_data.shape[0]):
+            #     x_test.append(input_data[i-100:i])
+            #     y_test.append(input_data[i,0])
+            # x_test,y_test=np.array(x_test),np.array(y_test)   
+            # y_predicted=model.predict(x_test)
+            # scaler=scaler.scale_
+            # scale_factor=1/scaler[0]
+            # y_predicted=y_predicted* scale_factor
+            # y_test=y_test*scale_factor
             
-            st.subheader('Closing Price vs Time Chart 200MA')
-            # ma100=df.Close.rolling(100).mean()
-            ma200=df.Close.rolling(200).mean()
-            fig3=plt.figure(figsize=(12,6))
-            # plt.plot(ma100,'r')
-            plt.plot(ma200,'r')
-            plt.plot(df.Close)
-            st.pyplot(fig3)
-            
-            data_training =pd.DataFrame(df['Close'][0:int(len(df)*0.75)])
-            data_testing =pd.DataFrame(df['Close'][0:int(len(df)*0.75):int(len(df))])
-            scaler=MinMaxScaler(feature_range=(0,1))
-            data_training_array=scaler.fit_transform(data_training)
-            x_train=[]
-            y_train=[]
-            for i in range(100,data_training_array.shape[0]):
-                x_train.append(data_training_array[i-100:i])
-                y_train.append(data_training_array[i,0])
-            x_train,y_train=np.array(x_train),np.array(y_train)
-            # Machine Learning Model
-            model=model('keras_stock_price_models')
-            past_100_days= data_training.tail(100)
-            final_df= past_100_days.append(data_testing,ignore_index=True)
-            input_data=scaler.fit_transform(final_df)   
-            x_test=[]
-            y_test=[]
-            for i in range(100,input_data.shape[0]):
-                x_test.append(input_data[i-100:i])
-                y_test.append(input_data[i,0])
-            x_test,y_test=np.array(x_test),np.array(y_test)   
-            y_predicted=model.predict(x_test)
-            scaler=scaler.scale_
-            scale_factor=1/scaler[0]
-            y_predicted=y_predicted* scale_factor
-            y_test=y_test*scale_factor
-            
-            st.subheader('Predictions vs Original')
-            fig2 =plt.figure(figsize=(12,6))
-            plt.plot(y_test,'b',label='Original Price ')
-            plt.plot(y_predicted,'r',label='Predicted Price ')
-            plt.xlabel('Time')
-            plt.xlabel('Price')
-            plt.legend()
-            st.pyplot(fig2)
+            # st.subheader('Predictions vs Original')
+            # fig2 =plt.figure(figsize=(12,6))
+            # plt.plot(y_test,'b',label='Original Price ')
+            # plt.plot(y_predicted,'r',label='Predicted Price ')
+            # plt.xlabel('Time')
+            # plt.xlabel('Price')
+            # plt.legend()
+            # st.pyplot(fig2)
